@@ -33,6 +33,11 @@ same schema.
 
 ### Fixed
 
+- `npm run check:migrations` could abort the process on exit. It opened
+  databases and never closed them, leaving better-sqlite3 to finalise
+  statements in a native destructor after Node had torn down the environment —
+  a SIGABRT on Linux under Node 24, which is why it never showed on macOS. CI
+  caught it on its first run.
 - `README.md` and `CONTRIBUTING.md` both claimed Node 20 or newer, but
   `npm run check:migrations` runs a `.mts` file and fails outright on Node 20.
   The floor is 22.18, now stated and declared in `engines`.

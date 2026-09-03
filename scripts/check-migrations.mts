@@ -43,8 +43,27 @@ function shape(conn: Database.Database): string {
     .join("\n");
 }
 
+// Every handle opened here, so they can all be closed before the temp
+// directory goes. better-sqlite3 finalises statements in a native destructor;
+// left to the garbage collector, that can run after Node has torn down the
+// environment and abort the process (SIGABRT, exit 134) on Linux.
+const opened: Database.Database[] = [];
+
 function open(name: string): Database.Database {
-  return new Database(path.join(tmp, `${name}.db`));
+  const conn = new Database(path.join(tmp, `${name}.db`));
+  opened.push(conn);
+  return conn;
+}
+
+function closeAll(): void {
+  for (const conn of opened) {
+    try {
+      conn.close();
+    } catch {
+      // Already closed, or never opened cleanly — nothing to salvage.
+    }
+  }
+  opened.length = 0;
 }
 
 const failures: string[] = [];
@@ -96,6 +115,7 @@ for (const file of fs.readdirSync(BASELINES).sort()) {
   check(`${release} → no dangling references`, broken.length === 0);
 }
 
+closeAll();
 fs.rmSync(tmp, { recursive: true, force: true });
 
 if (failures.length > 0) {
