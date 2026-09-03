@@ -150,6 +150,22 @@ export async function saveAiKey(providerId: string, key: string | null) {
   revalidatePath("/", "layout");
 }
 
+/**
+ * Save the provider's extra value — for Anthropic, the workspace an
+ * identity-linked key acts in. Not a secret, but it lives beside the key so
+ * there is one place to look.
+ */
+export async function saveAiExtra(providerId: string, value: string | null) {
+  const provider = providerById(providerId);
+  if (!provider?.extra) throw new Error(`No extra setting for ${providerId}.`);
+
+  const trimmed = value?.trim() ?? "";
+  writeEnvValue(provider.extra.envVar, trimmed ? trimmed : null);
+
+  revalidatePath("/settings");
+  revalidatePath("/", "layout");
+}
+
 /* ------------------------------------------------------------------ */
 /* Import                                                              */
 /* ------------------------------------------------------------------ */

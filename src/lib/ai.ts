@@ -60,6 +60,11 @@ export const AI_PROVIDERS: AiProviderInfo[] = [
     // The id is complete as written — model ids carry no date suffix, and an
     // invented one is a 400 rather than a helpful "no such model".
     model: "claude-haiku-4-5",
+    extra: {
+      envVar: "LOCUS_AI_ANTHROPIC_WORKSPACE",
+      label: "Workspace ID",
+      hint: "Only for identity-linked keys, which must say which workspace they act in. If you are not sure, leave it blank — Locus will tell you if it is needed.",
+    },
   },
   {
     id: "openai",
@@ -71,14 +76,33 @@ export const AI_PROVIDERS: AiProviderInfo[] = [
   },
 ];
 
-/** Auth is provider-specific and stays in this module with the key. */
-const AUTH_HEADERS: Record<string, (key: string) => Record<string, string>> = {
-  anthropic: (key) => ({
+/**
+ * Auth is provider-specific and stays in this module with the key.
+ *
+ * `extra` is the non-secret companion some accounts need — for Anthropic, the
+ * workspace an identity-linked key acts in. Sent only when set, since an
+ * ordinary key does not want it.
+ */
+const AUTH_HEADERS: Record<
+  string,
+  (key: string, extra: string | null) => Record<string, string>
+> = {
+  anthropic: (key, workspace) => ({
     "x-api-key": key,
     "anthropic-version": "2023-06-01",
+    ...(workspace ? { "anthropic-workspace-id": workspace } : {}),
   }),
   openai: (key) => ({ authorization: `Bearer ${key}` }),
 };
+
+/** The provider's extra value, from .env.local first then the environment. */
+export function readExtra(provider: AiProviderInfo): string | null {
+  if (!provider.extra) return null;
+  const fromFile = readEnvValue(provider.extra.envVar);
+  if (fromFile) return fromFile;
+  const fromEnv = process.env[provider.extra.envVar]?.trim();
+  return fromEnv ? fromEnv : null;
+}
 
 export function providerById(id: string): AiProviderInfo | null {
   return AI_PROVIDERS.find((p) => p.id === id) ?? null;
@@ -119,6 +143,11 @@ export function keySourceFor(
   return readKeySource(provider)?.source ?? null;
 }
 
+/** Whether the provider's extra value is set. Never returns the value itself. */
+export function hasExtraFor(provider: AiProviderInfo): boolean {
+  return readExtra(provider) !== null;
+}
+
 /**
  * What is available right now. A level above local with no key in the
  * environment reports as degraded and behaves exactly like local, so a missing
@@ -141,6 +170,7 @@ export function getAiCapabilities(): AiCapabilities {
     provider,
     hasKey,
     keySource: found?.source ?? null,
+    hasExtra: provider ? readExtra(provider) !== null : false,
     degraded,
   };
 }
@@ -246,12 +276,14 @@ export function getAiClient(need: AiRequirement): AiClient | null {
   const auth = AUTH_HEADERS[provider.id];
   if (!auth) return null;
 
+  const extra = readExtra(provider);
+
   const send: AiClient["fetch"] = (url, init) =>
     fetch(url, {
       ...init,
       headers: {
         "content-type": "application/json",
-        ...auth(key),
+        ...auth(key, extra),
         ...(init?.headers ?? {}),
       },
     });

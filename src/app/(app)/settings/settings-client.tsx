@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { saveAiKey, saveAiSettings } from "@/lib/actions";
+import { saveAiExtra, saveAiKey, saveAiSettings } from "@/lib/actions";
 import type { AiCapabilities, AiLevel, AiProviderInfo } from "@/lib/types";
 
 export function AiSettings({
@@ -17,6 +17,7 @@ export function AiSettings({
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [keyDraft, setKeyDraft] = useState("");
+  const [extraDraft, setExtraDraft] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   // Whether a key is present is decided outside the browser, so re-read from
@@ -37,6 +38,18 @@ export function AiSettings({
         router.refresh();
       } catch (cause) {
         setError(cause instanceof Error ? cause.message : "Could not save that key.");
+      }
+    });
+
+  const submitExtra = (value: string | null) =>
+    startTransition(async () => {
+      setError(null);
+      try {
+        await saveAiExtra(capabilities.provider!.id, value);
+        setExtraDraft("");
+        router.refresh();
+      } catch (cause) {
+        setError(cause instanceof Error ? cause.message : "Could not save that.");
       }
     });
 
@@ -184,6 +197,57 @@ export function AiSettings({
                     </div>
                   </label>
                 </>
+              )}
+
+              {capabilities.provider.extra && (
+                <div className="grid gap-1.5 border-t border-[var(--color-line)] pt-3">
+                  <span className="text-[12.5px]">
+                    <span className="font-medium">
+                      {capabilities.provider.extra.label}
+                    </span>{" "}
+                    <span className="muted">
+                      {capabilities.hasExtra ? "— set." : "— not set."}
+                    </span>
+                  </span>
+                  <span className="text-[12.5px] muted">
+                    {capabilities.provider.extra.hint}
+                  </span>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      className="field flex-1"
+                      autoComplete="off"
+                      spellCheck={false}
+                      placeholder={capabilities.provider.extra.envVar}
+                      value={extraDraft}
+                      disabled={busy}
+                      onChange={(event) => setExtraDraft(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" && extraDraft.trim()) {
+                          submitExtra(extraDraft);
+                        }
+                      }}
+                    />
+                    <button
+                      type="button"
+                      className="btn"
+                      disabled={busy || !extraDraft.trim()}
+                      onClick={() => submitExtra(extraDraft)}
+                    >
+                      Save
+                    </button>
+                    {capabilities.hasExtra && (
+                      <button
+                        type="button"
+                        className="btn"
+                        disabled={busy}
+                        onClick={() => submitExtra(null)}
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
+                </div>
               )}
 
               {error && (

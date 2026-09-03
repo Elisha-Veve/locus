@@ -26,6 +26,16 @@ export interface AiProviderInfo {
   endpoint: string;
   /** The small model these one-shot jobs use — cheap enough for a free tier. */
   model: string;
+  /**
+   * An extra, non-secret value some accounts must send alongside the key.
+   * Anthropic's identity-linked keys need the workspace the request acts in;
+   * ordinary keys need nothing and this stays empty.
+   */
+  extra?: {
+    envVar: string;
+    label: string;
+    hint: string;
+  };
 }
 
 /** What the app can actually do right now. */
@@ -41,6 +51,8 @@ export interface AiCapabilities {
    * changed there; 'file' is .env.local, which Settings can edit.
    */
   keySource: "env" | "file" | null;
+  /** Whether the provider's extra value (e.g. a workspace id) is set. */
+  hasExtra: boolean;
   /** True when a level above local was chosen but no key was found. */
   degraded: boolean;
 }
