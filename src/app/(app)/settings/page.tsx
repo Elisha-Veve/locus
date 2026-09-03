@@ -14,7 +14,15 @@ export default function SettingsPage() {
         <h1 className="text-[26px] font-semibold tracking-tight">Settings</h1>
         <p className="mt-1 muted">
           How much Locus is allowed to reach out. Everything works without this;
-          the default makes no network calls at all.
+          the default makes no network calls at all.{" "}
+          <a
+            className="underline"
+            href="https://github.com/Elisha-Veve/locus/blob/main/docs/providers.md"
+            target="_blank"
+            rel="noreferrer noopener"
+          >
+            Which provider should I use?
+          </a>
         </p>
       </div>
       <AiSettings

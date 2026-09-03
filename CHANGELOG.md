@@ -36,7 +36,9 @@ same schema.
   needed. CI runs it.
 
 - **Anthropic, OpenAI and Groq** as providers, chosen in Settings. Groq's free
-  tier is the easiest place to start.
+  tier is the easiest place to start —
+  [docs/providers.md](docs/providers.md) covers getting a key for each, and
+  what to do when a model returns 404.
 
 - **The model is configurable.** Each provider ships a default, and
   `LOCUS_AI_<PROVIDER>_MODEL` — or the field in Settings — overrides it. Which
