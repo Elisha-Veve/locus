@@ -1,0 +1,51 @@
+name: Bug report
+description: Something behaves differently from how it should
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, and what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open the library
+        2. …
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Where
+      options:
+        - The builder
+        - The library
+        - The exported PDF
+        - Saved versions
+        - Themes or styles
+        - Somewhere else
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: From package.json, or the release you installed.
+      placeholder: "1.2.0"
+  - type: input
+    id: env
+    attributes:
+      label: OS and Node version
+      placeholder: "macOS 15, Node 22.3"
+  - type: textarea
+    id: extra
+    attributes:
+      label: Anything else
+      description: >
+        Terminal output, a console error, or a PDF that came out wrong.
+        Please redact your own personal details before attaching anything.

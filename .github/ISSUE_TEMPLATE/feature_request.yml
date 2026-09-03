@@ -1,0 +1,22 @@
+name: Idea
+description: Suggest something Locus should do
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do
+      description: >
+        Describe the situation rather than the solution. Knowing what you were
+        trying to achieve usually suggests a better answer than the one either
+        of us thought of first.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What you have in mind
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: How you work around it today

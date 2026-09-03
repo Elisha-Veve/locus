@@ -64,6 +64,17 @@ Internal only — nothing changes in the app, and no action is needed to upgrade
   column, another matched a string inside the table's SQL — and nothing
   recorded what had been applied.
 
+## [1.2.1] — 2026-09-03
+
+### Added
+
+- MIT licence. The repository was public but unlicensed, which under copyright
+  means all rights reserved — nobody could legally use or modify it.
+- `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md` and `SECURITY.md`.
+- Issue forms and a pull request checklist under `.github/`.
+- Credit for the four OFL typefaces the exports embed, and a note that
+  embedding them carries no obligation on to you.
+
 ## [Unreleased]
 
 Nothing yet.
@@ -108,7 +119,8 @@ First release.
 - Data lives in `data/locus.db` and is gitignored. Back it up yourself.
 - Deleting a library record removes it from past CVs as well.
 
-[Unreleased]: https://github.com/Elisha-Veve/locus/compare/v1.2.0...HEAD
+[Unreleased]: https://github.com/Elisha-Veve/locus/compare/v1.2.1...HEAD
+[1.2.1]: https://github.com/Elisha-Veve/locus/releases/tag/v1.2.1
 [1.2.0]: https://github.com/Elisha-Veve/locus/releases/tag/v1.2.0
 [1.1.0]: https://github.com/Elisha-Veve/locus/releases/tag/v1.1.0
 [1.0.0]: https://github.com/Elisha-Veve/locus/releases/tag/v1.0.0

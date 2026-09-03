@@ -1,5 +1,8 @@
 # Locus
 
+[![Licence: MIT](https://img.shields.io/badge/licence-MIT-blue.svg)](LICENSE)
+[![Release](https://img.shields.io/github/v/release/Elisha-Veve/locus)](https://github.com/Elisha-Veve/locus/releases)
+
 Keep every experience you have on file. For each application, tick the ones
 that fit, order them, and export a one-page PDF.
 
@@ -220,6 +223,35 @@ real data.
 ## Releases
 
 See [CHANGELOG.md](CHANGELOG.md). Every version gets an entry.
+
+## Contributing
+
+Pull requests are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for setup and
+the two things that are easy to get wrong. Issues labelled
+[good first issue](https://github.com/Elisha-Veve/locus/labels/good%20first%20issue)
+are small and self-contained.
+
+By taking part you agree to the [Code of Conduct](CODE_OF_CONDUCT.md). To report
+a vulnerability, see [SECURITY.md](SECURITY.md).
+
+## Licence
+
+[MIT](LICENSE). Use it, change it, sell it — just keep the copyright notice.
+
+### Typefaces
+
+The four faces are dependencies rather than system fonts, so a PDF looks the
+same wherever it is made. All are under the
+[SIL Open Font License 1.1](https://openfontlicense.org), which expressly
+permits embedding them in a document:
+
+- [EB Garamond](https://github.com/octaviopardo/EBGaramond12) — Georg Duffner and Octavio Pardo
+- [Inter](https://rsms.me/inter/) — Rasmus Andersson
+- [Open Sans](https://fonts.google.com/specimen/Open+Sans) — Steve Matteson
+- [Merriweather](https://github.com/SorkinType/Merriweather) — Sorkin Type
+
+The PDFs you export embed a subset of whichever face the style uses. That is
+allowed under the OFL and carries no obligation on to you.
 
 ## Not done yet
 

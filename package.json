@@ -1,6 +1,6 @@
 {
   "name": "locus",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "private": true,
   "scripts": {
     "dev": "next dev -p 3210",
@@ -35,5 +35,15 @@
     "tailwindcss": "^4.1.12",
     "typescript": "^5.9.2"
   },
-  "description": "Keep every experience on file, put the relevant ones forward."
+  "description": "Keep every experience on file, put the relevant ones forward.",
+  "license": "MIT",
+  "author": "Elisha Elorm Kwesi Amenuveve",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Elisha-Veve/locus.git"
+  },
+  "homepage": "https://github.com/Elisha-Veve/locus#readme",
+  "bugs": {
+    "url": "https://github.com/Elisha-Veve/locus/issues"
+  }
 }
