@@ -35,6 +35,18 @@ same schema.
   dates, wrong-typed collections and oversized fields, with no key or network
   needed. CI runs it.
 
+- **PDFs are read without installing anything.** Choosing a PDF used to need
+  `pdftotext` from poppler — a system dependency, so for most people the option
+  was there and quietly did not work. A bundled reader replaces it; `npm
+  install` is the whole setup, and there is now one code path rather than two,
+  so a parse that goes wrong goes wrong the same way for everyone.
+
+  Plain text extraction throws away vertical space, and vertical space is what
+  the parser reads — records are separated by blank lines. So the reader works
+  from positioned text and rebuilds the layout: lines grouped by baseline, a
+  blank line wherever the gap is markedly bigger than usual, and wide
+  horizontal gaps kept as spaces so `Employer    Role` still splits.
+
 - **Anthropic, OpenAI and Groq** as providers, chosen in Settings. Groq's free
   tier is the easiest place to start —
   [docs/providers.md](docs/providers.md) covers getting a key for each, and
