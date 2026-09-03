@@ -2,6 +2,40 @@ export type SectionKind = "entries" | "skills" | "prose";
 /** How an entries section prints its dates. */
 export type DateMode = "range" | "single" | "none";
 
+/**
+ * How much Locus is allowed to reach out.
+ *
+ * 'local' makes no network calls at all and is the default. 'assisted' covers
+ * one-shot jobs on text you already have, small enough to sit inside the free
+ * tier most providers offer. 'full' covers everything else.
+ */
+export type AiLevel = "local" | "assisted" | "full";
+
+/** The level a feature needs before it will run. */
+export type AiRequirement = "assisted" | "full";
+
+/** Provider metadata. Safe to hand to the browser — holds no secret. */
+export interface AiProviderInfo {
+  id: string;
+  label: string;
+  /** Environment variable the key is read from. */
+  envVar: string;
+  /** Where to get a key. */
+  keysUrl: string;
+}
+
+/** What the app can actually do right now. */
+export interface AiCapabilities {
+  /** The level in force. Falls back to 'local' when the key is missing. */
+  level: AiLevel;
+  /** The level the user asked for, which may not be the one in force. */
+  chosen: AiLevel;
+  provider: AiProviderInfo | null;
+  hasKey: boolean;
+  /** True when a level above local was chosen but no key was found. */
+  degraded: boolean;
+}
+
 export interface Profile {
   full_name: string;
   email: string;

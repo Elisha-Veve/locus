@@ -4,6 +4,12 @@ out
 *.tsbuildinfo
 next-env.d.ts
 .DS_Store
+# Secrets. API keys for the assisted and full AI levels live here, never in
+# the database and never in the repo. .env.example is the tracked template.
+.env
+.env.*
+!.env.example
+
 # All runtime state: the SQLite database (plus its -wal/-shm sidecars, which
 # contain real data pages), the demo database, and archived PDF exports.
 data/

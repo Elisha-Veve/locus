@@ -67,6 +67,9 @@ export default function RootLayout({
               <Link href="/library" className="btn btn-ghost btn-sm">
                 Library
               </Link>
+              <Link href="/settings" className="btn btn-ghost btn-sm">
+                Settings
+              </Link>
             </nav>
             <div className="ml-auto">
               <ThemeSwitcher />

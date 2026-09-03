@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { db, nextOrder } from "./db";
 import { listExports, removeExport } from "./exports";
 import { touchCv } from "./queries";
-import type { DateMode, Profile, SectionKind } from "./types";
+import type { AiLevel, DateMode, Profile, SectionKind } from "./types";
 
 /* ------------------------------------------------------------------ */
 /* Helpers                                                             */
@@ -80,6 +80,34 @@ export async function saveProfile(patch: Partial<Profile>) {
     )
     .run({ ...current, ...patch });
   refreshLibrary();
+}
+
+/* ------------------------------------------------------------------ */
+/* AI level                                                            */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Records which level the user wants and which provider's key to look for.
+ * The key itself never comes through here — it is read from the environment,
+ * so nothing secret is written to the database.
+ */
+export async function saveAiSettings(patch: {
+  level?: AiLevel;
+  provider?: string;
+}) {
+  const current = db()
+    .prepare("SELECT ai_level, ai_provider FROM profile WHERE id = 1")
+    .get() as { ai_level: AiLevel; ai_provider: string };
+
+  db()
+    .prepare("UPDATE profile SET ai_level = @level, ai_provider = @provider WHERE id = 1")
+    .run({
+      level: patch.level ?? current.ai_level,
+      provider: patch.provider ?? current.ai_provider,
+    });
+
+  revalidatePath("/settings");
+  revalidatePath("/", "layout");
 }
 
 /* ------------------------------------------------------------------ */

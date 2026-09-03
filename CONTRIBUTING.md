@@ -31,13 +31,20 @@ npm run check:migrations  # schema and migrations agree
 There is no test framework yet; these three are what stands in for one.
 Adding tests would be a genuinely useful contribution.
 
-## Two things that are easy to get wrong
+## Three things that are easy to get wrong
 
 **Schema changes need doing twice.** `src/lib/schema.sql` is what a new
 database gets; `src/lib/migrations.ts` is what an existing one gets. Change
 one without the other and people who installed earlier end up on a different
 schema — invisibly, until something breaks. `npm run check:migrations` catches
 it, so run it.
+
+**Secrets belong in the environment.** API keys are read from `.env.local` and
+never written to the database. If you add a provider, add its env var to
+`AI_PROVIDERS` in `src/lib/ai.ts` and to `.env.example` — never a real key to
+either. Do not export a way to read a key directly: `getAiClient` hands out a
+request function with the key already attached, which is what makes "local
+means no network" hold.
 
 **The document is not themed.** The app's colour themes deliberately stop at
 the edge of the page. A CV is a printed artefact: it stays near-black on white

@@ -88,6 +88,26 @@ export const MIGRATIONS: Migration[] = [
       }
     },
   },
+  {
+    version: 3,
+    name: "profile.ai_level and profile.ai_provider",
+    up(conn) {
+      // Which AI level the user has chosen, and which provider's key to look
+      // for. The key itself is never stored — it is read from the environment.
+      const existing = columns(conn, "profile");
+      if (!existing.has("ai_level")) {
+        conn.exec(
+          "ALTER TABLE profile ADD COLUMN ai_level TEXT NOT NULL " +
+            "CHECK (ai_level IN ('local','assisted','full')) DEFAULT 'local'",
+        );
+      }
+      if (!existing.has("ai_provider")) {
+        conn.exec(
+          "ALTER TABLE profile ADD COLUMN ai_provider TEXT NOT NULL DEFAULT ''",
+        );
+      }
+    },
+  },
 ];
 
 export const LATEST_VERSION = MIGRATIONS.reduce(

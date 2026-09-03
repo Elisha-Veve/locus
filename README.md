@@ -163,6 +163,56 @@ Merriweather, so an identical multiplier would leave the serif styles cramped
 and the sans ones loose. The multipliers are tuned so leading divided by
 x-height lands in a narrow band instead.
 
+## AI levels
+
+Locus makes no network calls by default and needs no key. Settings offers three
+levels, and the one in force decides what features can do:
+
+| Level | Needs | What it allows |
+| --- | --- | --- |
+| **Local** | Nothing | Everything Locus does today. No network calls. |
+| **Assisted** | A key, usage small enough for most free tiers | One-shot jobs on text you already have |
+| **Full** | A key and real usage | Everything above, plus features that call out as you work |
+
+Choose the level in the app; put the key in `.env.local`, which is gitignored:
+
+```bash
+cp .env.example .env.local   # then fill in the provider you picked
+```
+
+Keys are read from the environment and never written to the database, so a
+backup of your data never contains a secret, and losing the database does not
+lose the key.
+
+Choosing a level without setting a key is safe. Locus reports it and keeps
+running locally — features that would have used a key take their offline path
+instead, so nothing breaks.
+
+### Adding a feature that uses it
+
+Ask what is available and decide for yourself how to degrade. Whether a feature
+falls back or hides is the feature's call, not the framework's:
+
+```ts
+import { canUseAi, getAiClient } from "@/lib/ai";
+
+// A feature with an offline path
+const parsed = basicParse(text);
+if (await canUseAi("assisted")) return refine(parsed);
+return parsed;
+
+// A feature that needs a key: no client, no feature
+const ai = getAiClient("full");
+if (!ai) return null;
+const res = await ai.fetch(url, { body });
+```
+
+`getAiClient` returns `null` unless the level permits it, and the client
+attaches the key itself — the key is never handed out, so there is no way to
+reach a provider without passing the check. `src/lib/ai.ts` is server-side
+only; pass `getAiCapabilities()` down as a prop rather than importing it into a
+client component.
+
 ## Schema changes
 
 `src/lib/schema.sql` is what a brand new database gets. `src/lib/migrations.ts`

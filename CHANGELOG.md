@@ -75,6 +75,28 @@ Internal only — nothing changes in the app, and no action is needed to upgrade
 - Credit for the four OFL typefaces the exports embed, and a note that
   embedding them carries no obligation on to you.
 
+## [1.3.0] — 2026-09-03
+
+### Added
+
+- An AI level, chosen in a new Settings page: **Local** (the default, no
+  network calls and no key), **Assisted** and **Full**. It is a runtime
+  setting, so switching costs a page refresh rather than a reinstall, and one
+  build serves all three.
+- `src/lib/ai.ts`, which answers what is available and is the only route to a
+  provider key. `getAiClient` returns nothing unless the level permits it and
+  attaches the key itself, so a feature cannot reach a provider without passing
+  the check.
+- `.env.example`, and `.gitignore` now excludes `.env` files. Keys live in
+  `.env.local` and are never written to the database — a backup of your data
+  contains no secret, and losing the database does not lose the key.
+
+### Notes
+
+Choosing a level without setting a key is safe: Locus says so and keeps running
+locally. No feature uses this yet; it is the groundwork that lets one be added
+without making the offline path worse.
+
 ## [Unreleased]
 
 Nothing yet.
@@ -119,7 +141,8 @@ First release.
 - Data lives in `data/locus.db` and is gitignored. Back it up yourself.
 - Deleting a library record removes it from past CVs as well.
 
-[Unreleased]: https://github.com/Elisha-Veve/locus/compare/v1.2.1...HEAD
+[Unreleased]: https://github.com/Elisha-Veve/locus/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/Elisha-Veve/locus/releases/tag/v1.3.0
 [1.2.1]: https://github.com/Elisha-Veve/locus/releases/tag/v1.2.1
 [1.2.0]: https://github.com/Elisha-Veve/locus/releases/tag/v1.2.0
 [1.1.0]: https://github.com/Elisha-Veve/locus/releases/tag/v1.1.0

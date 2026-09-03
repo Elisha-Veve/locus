@@ -8,7 +8,13 @@ CREATE TABLE IF NOT EXISTS profile (
   phone      TEXT NOT NULL DEFAULT '',
   linkedin   TEXT NOT NULL DEFAULT '',
   website    TEXT NOT NULL DEFAULT '',
-  location   TEXT NOT NULL DEFAULT ''
+  location   TEXT NOT NULL DEFAULT '',
+
+  -- How much Locus is allowed to reach out. 'local' is the default and makes
+  -- no network calls at all. The API key itself is never stored here: it lives
+  -- in the environment, and ai_provider only records which one to look for.
+  ai_level    TEXT NOT NULL CHECK (ai_level IN ('local','assisted','full')) DEFAULT 'local',
+  ai_provider TEXT NOT NULL DEFAULT ''
 );
 
 -- A CV category: Professional Experience, Skills, Education, Projects, ...
