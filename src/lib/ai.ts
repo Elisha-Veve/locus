@@ -57,6 +57,8 @@ export const AI_PROVIDERS: AiProviderInfo[] = [
     envVar: "LOCUS_AI_ANTHROPIC",
     keysUrl: "https://console.anthropic.com/settings/keys",
     endpoint: "https://api.anthropic.com/v1/messages",
+    wire: "anthropic",
+    maxTokensParam: "max_tokens",
     // The id is complete as written — model ids carry no date suffix, and an
     // invented one is a 400 rather than a helpful "no such model".
     model: "claude-haiku-4-5",
@@ -72,7 +74,20 @@ export const AI_PROVIDERS: AiProviderInfo[] = [
     envVar: "LOCUS_AI_OPENAI",
     keysUrl: "https://platform.openai.com/api-keys",
     endpoint: "https://api.openai.com/v1/chat/completions",
+    wire: "openai",
+    maxTokensParam: "max_completion_tokens",
     model: "gpt-4o-mini",
+  },
+  {
+    id: "groq",
+    label: "Groq",
+    envVar: "LOCUS_AI_GROQ",
+    keysUrl: "https://console.groq.com/keys",
+    endpoint: "https://api.groq.com/openai/v1/chat/completions",
+    wire: "openai",
+    // Groq is OpenAI-compatible but predates the rename.
+    maxTokensParam: "max_tokens",
+    model: "llama-3.3-70b-versatile",
   },
 ];
 
@@ -93,6 +108,7 @@ const AUTH_HEADERS: Record<
     ...(workspace ? { "anthropic-workspace-id": workspace } : {}),
   }),
   openai: (key) => ({ authorization: `Bearer ${key}` }),
+  groq: (key) => ({ authorization: `Bearer ${key}` }),
 };
 
 /** The provider's extra value, from .env.local first then the environment. */
@@ -204,21 +220,11 @@ function buildRequest(
   prompt: string,
   maxTokens: number,
 ): { url: string; body: string } {
-  if (provider.id === "anthropic") {
-    return {
-      url: provider.endpoint,
-      body: JSON.stringify({
-        model: provider.model,
-        max_tokens: maxTokens,
-        messages: [{ role: "user", content: prompt }],
-      }),
-    };
-  }
   return {
     url: provider.endpoint,
     body: JSON.stringify({
       model: provider.model,
-      max_completion_tokens: maxTokens,
+      [provider.maxTokensParam]: maxTokens,
       messages: [{ role: "user", content: prompt }],
     }),
   };
@@ -249,7 +255,7 @@ async function explain(response: Response): Promise<string> {
 
 function readReply(provider: AiProviderInfo, payload: unknown): string {
   const data = payload as Record<string, unknown>;
-  if (provider.id === "anthropic") {
+  if (provider.wire === "anthropic") {
     const content = data.content as Array<{ type: string; text?: string }> | undefined;
     return (content ?? []).filter((c) => c.type === "text").map((c) => c.text ?? "").join("");
   }

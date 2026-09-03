@@ -24,6 +24,17 @@ export interface AiProviderInfo {
   keysUrl: string;
   /** Chat completions endpoint. */
   endpoint: string;
+  /**
+   * Which request and response shape the provider speaks. Several providers
+   * are OpenAI-compatible, so this is the axis that matters — not the vendor.
+   */
+  wire: "anthropic" | "openai";
+  /**
+   * What the output ceiling is called. OpenAI moved to
+   * `max_completion_tokens`; Anthropic and the OpenAI-compatible providers
+   * still take `max_tokens`. Named per provider rather than guessed.
+   */
+  maxTokensParam: string;
   /** The small model these one-shot jobs use — cheap enough for a free tier. */
   model: string;
   /**
