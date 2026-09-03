@@ -1,0 +1,418 @@
+@import "tailwindcss";
+
+/*
+  Every colour in the app chrome comes from these tokens, so a theme is just a
+  block that redefines them. The CV document is deliberately NOT themed — it
+  lives in cvStyles.ts and stays black on white, because it is a printed page.
+*/
+@theme {
+  --color-ink: #14161a;
+  --color-ink-2: #454a52;
+  --color-ink-3: #6b7280;
+  --color-placeholder: #8b929e;
+
+  --color-surface: #ffffff;
+  --color-surface-2: #f1f3f6;
+  --color-canvas: #f4f5f7;
+  --color-mat: #e8eaee;
+
+  --color-line: #e2e5ea;
+  --color-line-2: #eef0f3;
+  --color-control: #b9c0ca;
+
+  --color-accent: #1d4ed8;
+  --color-accent-strong: #1a44bd;
+  --color-accent-soft: #eaf0ff;
+  --color-on-accent: #ffffff;
+
+  --color-danger: #b42318;
+  --color-danger-soft: #fef3f2;
+  --color-danger-line: #f0c9c5;
+}
+
+:root { color-scheme: light; }
+
+/* Attribute selectors outrank :root, so these win over the @theme defaults. */
+html[data-theme="sage"] {
+  color-scheme: light;
+  --color-ink: #16201a;
+  --color-ink-2: #43514a;
+  --color-ink-3: #6b7c72;
+  --color-placeholder: #869384;
+  --color-surface: #ffffff;
+  --color-surface-2: #eef3ea;
+  --color-canvas: #f1f4f0;
+  --color-mat: #e2e8df;
+  --color-line: #dde4d9;
+  --color-line-2: #e9efe6;
+  --color-control: #b2bfb6;
+  --color-accent: #2f7d5a;
+  --color-accent-strong: #276b4d;
+  --color-accent-soft: #edf7f1;
+  --color-on-accent: #ffffff;
+  --color-danger: #a3301f;
+  --color-danger-soft: #fbeee9;
+  --color-danger-line: #e8c9bd;
+}
+
+html[data-theme="parchment"] {
+  color-scheme: light;
+  --color-ink: #221c12;
+  --color-ink-2: #4f4638;
+  --color-ink-3: #7a7060;
+  --color-placeholder: #978a74;
+  --color-surface: #fffdf7;
+  --color-surface-2: #f4efe3;
+  --color-canvas: #f5f1e8;
+  --color-mat: #e8e2d4;
+  --color-line: #e5ddcc;
+  --color-line-2: #efe9dc;
+  --color-control: #c4b9a4;
+  --color-accent: #9a5b1f;
+  --color-accent-strong: #864e19;
+  --color-accent-soft: #f6e9d8;
+  --color-on-accent: #fffdf7;
+  --color-danger: #a3301f;
+  --color-danger-soft: #fbeee9;
+  --color-danger-line: #e8c9bd;
+}
+
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --color-ink: #e6e9ee;
+  --color-ink-2: #b3bac5;
+  --color-ink-3: #8891a0;
+  --color-placeholder: #6b7484;
+  --color-surface: #171a20;
+  --color-surface-2: #212630;
+  --color-canvas: #0f1115;
+  --color-mat: #08090c;
+  --color-line: #2a303a;
+  --color-line-2: #21262e;
+  --color-control: #48505d;
+  --color-accent: #6f97ff;
+  --color-accent-strong: #85a8ff;
+  --color-accent-soft: #1c2740;
+  --color-on-accent: #0f1115;
+  --color-danger: #ff8b80;
+  --color-danger-soft: #2a1614;
+  --color-danger-line: #52302c;
+}
+
+html[data-theme="forest"] {
+  color-scheme: dark;
+  --color-ink: #e4ece6;
+  --color-ink-2: #adbcb2;
+  --color-ink-3: #7f9187;
+  --color-placeholder: #64756b;
+  --color-surface: #141c17;
+  --color-surface-2: #1d2921;
+  --color-canvas: #0d1310;
+  --color-mat: #070b08;
+  --color-line: #25332c;
+  --color-line-2: #1c2821;
+  --color-control: #445247;
+  --color-accent: #5fd39a;
+  --color-accent-strong: #7ce0ae;
+  --color-accent-soft: #143022;
+  --color-on-accent: #08130d;
+  --color-danger: #ff9a8f;
+  --color-danger-soft: #2a1614;
+  --color-danger-line: #4d2f2a;
+}
+
+
+html[data-theme="harbor"] {
+  color-scheme: light;
+  --color-ink: #101924;
+  --color-ink-2: #3f4c5c;
+  --color-ink-3: #66768a;
+  --color-placeholder: #838f9e;
+  --color-surface: #ffffff;
+  --color-surface-2: #e8eff7;
+  --color-canvas: #eff3f8;
+  --color-mat: #dde6f0;
+  --color-line: #d8e2ec;
+  --color-line-2: #e7edf4;
+  --color-control: #adbccd;
+  --color-accent: #1668b8;
+  --color-accent-strong: #125a9e;
+  --color-accent-soft: #ddebf9;
+  --color-on-accent: #ffffff;
+  --color-danger: #b42318;
+  --color-danger-soft: #fef3f2;
+  --color-danger-line: #f0c9c5;
+}
+
+html[data-theme="iris"] {
+  color-scheme: light;
+  --color-ink: #1c1626;
+  --color-ink-2: #4b4260;
+  --color-ink-3: #726889;
+  --color-placeholder: #8f86a3;
+  --color-surface: #ffffff;
+  --color-surface-2: #efeafa;
+  --color-canvas: #f4f1fa;
+  --color-mat: #e5def4;
+  --color-line: #e3dcf0;
+  --color-line-2: #ece7f6;
+  --color-control: #bcb2d1;
+  --color-accent: #6d3fc4;
+  --color-accent-strong: #5c33a8;
+  --color-accent-soft: #ece2fb;
+  --color-on-accent: #ffffff;
+  --color-danger: #b42318;
+  --color-danger-soft: #fef3f2;
+  --color-danger-line: #f0c9c5;
+}
+
+/* Rose leans magenta so the accent stays distinct from the danger red. */
+html[data-theme="blush"] {
+  color-scheme: light;
+  --color-ink: #241522;
+  --color-ink-2: #58414f;
+  --color-ink-3: #816475;
+  --color-placeholder: #9c8091;
+  --color-surface: #ffffff;
+  --color-surface-2: #f9e7f0;
+  --color-canvas: #fbf0f5;
+  --color-mat: #f2d9e6;
+  --color-line: #f0dae7;
+  --color-line-2: #f7e8f0;
+  --color-control: #d3b4c4;
+  --color-accent: #b52a72;
+  --color-accent-strong: #9a2260;
+  --color-accent-soft: #fbe1ef;
+  --color-on-accent: #ffffff;
+  --color-danger: #b42318;
+  --color-danger-soft: #fdf0ee;
+  --color-danger-line: #eec7bd;
+}
+
+html[data-theme="ember"] {
+  color-scheme: dark;
+  --color-ink: #f0e7d9;
+  --color-ink-2: #c0b2a0;
+  --color-ink-3: #948877;
+  --color-placeholder: #746a5c;
+  --color-surface: #1c1711;
+  --color-surface-2: #262019;
+  --color-canvas: #14100b;
+  --color-mat: #0d0a07;
+  --color-line: #322a20;
+  --color-line-2: #26201a;
+  --color-control: #564c3d;
+  --color-accent: #e0973f;
+  --color-accent-strong: #efad58;
+  --color-accent-soft: #34240f;
+  --color-on-accent: #14100b;
+  --color-danger: #ff8b80;
+  --color-danger-soft: #2a1614;
+  --color-danger-line: #52302c;
+}
+
+html[data-theme="midnight"] {
+  color-scheme: dark;
+  --color-ink: #e2e9f4;
+  --color-ink-2: #adbbcd;
+  --color-ink-3: #8494a8;
+  --color-placeholder: #667589;
+  --color-surface: #121a28;
+  --color-surface-2: #1a2434;
+  --color-canvas: #0b111c;
+  --color-mat: #060a11;
+  --color-line: #223046;
+  --color-line-2: #1a2537;
+  --color-control: #3f5169;
+  --color-accent: #57a8f5;
+  --color-accent-strong: #78bbfa;
+  --color-accent-soft: #12283f;
+  --color-on-accent: #08111c;
+  --color-danger: #ff8b80;
+  --color-danger-soft: #2a1614;
+  --color-danger-line: #52302c;
+}
+
+html[data-theme="plum"] {
+  color-scheme: dark;
+  --color-ink: #ebe4f5;
+  --color-ink-2: #b8adcb;
+  --color-ink-3: #8e82a3;
+  --color-placeholder: #6d6383;
+  --color-surface: #1a1526;
+  --color-surface-2: #241d33;
+  --color-canvas: #120e1a;
+  --color-mat: #0b0812;
+  --color-line: #2d2440;
+  --color-line-2: #221b31;
+  --color-control: #4d4266;
+  --color-accent: #a982f5;
+  --color-accent-strong: #bd9dfa;
+  --color-accent-soft: #241a3d;
+  --color-on-accent: #0f0a19;
+  --color-danger: #ff8b80;
+  --color-danger-soft: #2a1614;
+  --color-danger-line: #52302c;
+}
+
+html[data-theme="garnet"] {
+  color-scheme: dark;
+  --color-ink: #f4e4ee;
+  --color-ink-2: #ccadbf;
+  --color-ink-3: #a18395;
+  --color-placeholder: #7d6272;
+  --color-surface: #20141c;
+  --color-surface-2: #2b1c26;
+  --color-canvas: #170d13;
+  --color-mat: #0f070c;
+  --color-line: #3a2532;
+  --color-line-2: #2c1c27;
+  --color-control: #5c3f4e;
+  --color-accent: #ec6fa8;
+  --color-accent-strong: #f48cbb;
+  --color-accent-soft: #3a1728;
+  --color-on-accent: #180a11;
+  --color-danger: #ff9a8f;
+  --color-danger-soft: #2f1a16;
+  --color-danger-line: #573330;
+}
+
+html, body { height: 100%; }
+
+body {
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: ui-sans-serif, -apple-system, "SF Pro Text", "Segoe UI", Roboto,
+    Helvetica, Arial, sans-serif;
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+}
+
+@layer components {
+  /* Shared control styles — keeps the many small inputs consistent. */
+  .field {
+    width: 100%;
+    border: 1px solid var(--color-line);
+    border-radius: 6px;
+    background: var(--color-surface);
+    padding: 6px 9px;
+    font: inherit;
+    color: var(--color-ink);
+    transition: border-color .12s, box-shadow .12s;
+  }
+  .field:focus {
+    outline: none;
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 3px var(--color-accent-soft);
+  }
+  .field::placeholder { color: var(--color-placeholder); }
+  .field:disabled {
+    background: var(--color-surface-2);
+    color: var(--color-placeholder);
+    cursor: not-allowed;
+  }
+  textarea.field { resize: vertical; line-height: 1.45; }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    border: 1px solid var(--color-line);
+    border-radius: 6px;
+    background: var(--color-surface);
+    padding: 6px 11px;
+    font: inherit;
+    font-weight: 500;
+    color: var(--color-ink-2);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background .12s, border-color .12s, color .12s;
+  }
+  .btn:hover {
+    background: var(--color-surface-2);
+    border-color: var(--color-control);
+    color: var(--color-ink);
+  }
+  .btn:disabled { opacity: .5; cursor: default; }
+  .btn-primary {
+    background: var(--color-accent);
+    border-color: var(--color-accent);
+    color: var(--color-on-accent);
+  }
+  .btn-primary:hover {
+    background: var(--color-accent-strong);
+    border-color: var(--color-accent-strong);
+    color: var(--color-on-accent);
+  }
+  .btn-ghost { border-color: transparent; background: transparent; }
+  .btn-ghost:hover { background: var(--color-surface-2); border-color: transparent; }
+  .btn-danger:hover {
+    color: var(--color-danger);
+    border-color: var(--color-danger-line);
+    background: var(--color-danger-soft);
+  }
+  .btn-sm { padding: 3px 8px; font-size: 12.5px; }
+
+  .card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-line);
+    border-radius: 10px;
+  }
+
+  .muted { color: var(--color-ink-3); }
+
+  .eyebrow {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--color-ink-3);
+  }
+
+  /* Checkbox: bigger hit area than the 13px default, and clearly on/off. */
+  .check {
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    flex: none;
+    border: 1.5px solid var(--color-control);
+    border-radius: 4px;
+    background: var(--color-surface);
+    cursor: pointer;
+    position: relative;
+    transition: background .12s, border-color .12s;
+  }
+  .check:checked { background: var(--color-accent); border-color: var(--color-accent); }
+  .check:checked::after {
+    content: "";
+    position: absolute;
+    left: 4.5px; top: 1px;
+    width: 4px; height: 9px;
+    border: solid var(--color-on-accent);
+    border-width: 0 2px 2px 0;
+    transform: rotate(43deg);
+  }
+  .check:indeterminate { background: var(--color-control); border-color: var(--color-control); }
+  .check:indeterminate::after {
+    content: "";
+    position: absolute;
+    left: 3px; top: 6px;
+    width: 8px; height: 2px;
+    background: var(--color-surface);
+  }
+  .check:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+
+  .drag-handle {
+    cursor: grab;
+    color: var(--color-control);
+    flex: none;
+    line-height: 1;
+    padding: 2px;
+    border-radius: 4px;
+  }
+  .drag-handle:hover { color: var(--color-ink-3); background: var(--color-surface-2); }
+  .drag-handle:active { cursor: grabbing; }
+
+  .dimmed { opacity: .42; }
+}

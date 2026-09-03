@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <title>Locus</title>
+  <!--
+    The reduced mark. The full logo is a 3x3 lattice (see components/Logo.tsx),
+    but nine dots turn to mush in a 16px tab strip, so the favicon drops to 2x2
+    and keeps what carries the idea: a set of positions, one put forward.
+    Geometry is centred — the mark spans 6.65 to 25.35 on both axes.
+  -->
+  <rect width="32" height="32" rx="7" fill="#14161a"/>
+  <g fill="#98a2b4">
+    <circle cx="9.85" cy="11.35" r="3.2"/>
+    <circle cx="9.85" cy="22.15" r="3.2"/>
+    <circle cx="20.65" cy="22.15" r="3.2"/>
+  </g>
+  <circle cx="20.65" cy="11.35" r="4.7" fill="#7ea3ff"/>
+</svg>

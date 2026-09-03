@@ -1,0 +1,9 @@
+node_modules
+.next
+out
+*.tsbuildinfo
+next-env.d.ts
+.DS_Store
+# All runtime state: the SQLite database (plus its -wal/-shm sidecars, which
+# contain real data pages), the demo database, and archived PDF exports.
+data/
