@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { saveAiKey, saveAiSettings } from "@/lib/actions";
+import { saveAiExtra, saveAiKey, saveAiModel, saveAiSettings } from "@/lib/actions";
 import type { AiCapabilities, AiLevel, AiProviderInfo } from "@/lib/types";
 
 export function AiSettings({
@@ -17,6 +17,8 @@ export function AiSettings({
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [keyDraft, setKeyDraft] = useState("");
+  const [extraDraft, setExtraDraft] = useState(capabilities.extraValue ?? "");
+  const [modelDraft, setModelDraft] = useState(capabilities.model ?? "");
   const [error, setError] = useState<string | null>(null);
 
   // Whether a key is present is decided outside the browser, so re-read from
@@ -37,6 +39,28 @@ export function AiSettings({
         router.refresh();
       } catch (cause) {
         setError(cause instanceof Error ? cause.message : "Could not save that key.");
+      }
+    });
+
+  const submitExtra = (value: string | null) =>
+    startTransition(async () => {
+      setError(null);
+      try {
+        await saveAiExtra(capabilities.provider!.id, value);
+        router.refresh();
+      } catch (cause) {
+        setError(cause instanceof Error ? cause.message : "Could not save that.");
+      }
+    });
+
+  const submitModel = (value: string | null) =>
+    startTransition(async () => {
+      setError(null);
+      try {
+        await saveAiModel(capabilities.provider!.id, value);
+        router.refresh();
+      } catch (cause) {
+        setError(cause instanceof Error ? cause.message : "Could not save that.");
       }
     });
 
@@ -184,6 +208,106 @@ export function AiSettings({
                     </div>
                   </label>
                 </>
+              )}
+
+              <div className="grid gap-1.5 border-t border-[var(--color-line)] pt-3">
+                <span className="text-[12.5px] font-medium">Model</span>
+                <span className="text-[12.5px] muted">
+                  Which model to ask. The default is a starting point — if it is
+                  retired or not enabled on your account you will get a 404, and
+                  you can put a working one here without waiting for a release.
+                </span>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    className="field flex-1"
+                    autoComplete="off"
+                    spellCheck={false}
+                    placeholder={capabilities.provider.model}
+                    value={modelDraft}
+                    disabled={busy}
+                    onChange={(event) => setModelDraft(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" && modelDraft.trim()) {
+                        submitModel(modelDraft);
+                      }
+                    }}
+                  />
+                  <button
+                    type="button"
+                    className="btn"
+                    disabled={busy || !modelDraft.trim()}
+                    onClick={() => submitModel(modelDraft)}
+                  >
+                    Save
+                  </button>
+                  {capabilities.model !== capabilities.provider.model && (
+                    <button
+                      type="button"
+                      className="btn"
+                      disabled={busy}
+                      onClick={() => {
+                        setModelDraft(capabilities.provider!.model);
+                        submitModel(null);
+                      }}
+                    >
+                      Default
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {capabilities.provider.extra && (
+                <div className="grid gap-1.5 border-t border-[var(--color-line)] pt-3">
+                  <span className="text-[12.5px]">
+                    <span className="font-medium">
+                      {capabilities.provider.extra.label}
+                    </span>{" "}
+                    <span className="muted">
+                      {capabilities.extraValue
+                        ? `— ${capabilities.extraValue}`
+                        : "— not set."}
+                    </span>
+                  </span>
+                  <span className="text-[12.5px] muted">
+                    {capabilities.provider.extra.hint}
+                  </span>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      className="field flex-1"
+                      autoComplete="off"
+                      spellCheck={false}
+                      placeholder={capabilities.provider.extra.envVar}
+                      value={extraDraft}
+                      disabled={busy}
+                      onChange={(event) => setExtraDraft(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" && extraDraft.trim()) {
+                          submitExtra(extraDraft);
+                        }
+                      }}
+                    />
+                    <button
+                      type="button"
+                      className="btn"
+                      disabled={busy || !extraDraft.trim()}
+                      onClick={() => submitExtra(extraDraft)}
+                    >
+                      Save
+                    </button>
+                    {capabilities.extraValue && (
+                      <button
+                        type="button"
+                        className="btn"
+                        disabled={busy}
+                        onClick={() => submitExtra(null)}
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
+                </div>
               )}
 
               {error && (

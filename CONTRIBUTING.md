@@ -52,9 +52,10 @@ PR title as the commit subject you want.
 npx tsc --noEmit          # types
 npm run build             # production build
 npm run check:migrations  # schema and migrations agree
+npm run check:import      # reading a CV still works
 ```
 
-There is no test framework yet; these three are what stands in for one, and CI
+There is no test framework yet; these four are what stands in for one, and CI
 runs them on every pull request. Adding tests would be a genuinely useful
 contribution — see
 [#4](https://github.com/Elisha-Veve/locus/issues/4).
@@ -77,6 +78,23 @@ means no network" hold.
 **The document is not themed.** The app's colour themes deliberately stop at
 the edge of the page. A CV is a printed artefact: it stays near-black on white
 in every palette, and the export must not depend on which theme is active.
+
+## Reading a CV
+
+`src/lib/import/` turns a pasted or uploaded CV into records for review. It has
+two paths and the offline one is the floor: `parse.ts` reads layout alone and
+must stay useful with no key at all, while `refine.ts` improves on it when one
+is configured and falls back to it on any failure.
+
+`coerce.ts` is the part to be careful with. Nothing a model returns is trusted
+structurally — every field is read back and dropped if it is not the right
+shape. It is pure and has no database or network dependency so that
+`npm run check:import` can hammer it with malformed input; if you touch it, add
+a case there. A parser bug shows up on the review screen, but a coercion bug
+files an invention as somebody's career history.
+
+Nothing is written until the person has reviewed it. That is the feature, not
+a formality.
 
 ## Working on the document itself
 

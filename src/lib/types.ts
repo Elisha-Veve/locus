@@ -22,6 +22,31 @@ export interface AiProviderInfo {
   envVar: string;
   /** Where to get a key. */
   keysUrl: string;
+  /** Chat completions endpoint. */
+  endpoint: string;
+  /**
+   * Which request and response shape the provider speaks. Several providers
+   * are OpenAI-compatible, so this is the axis that matters — not the vendor.
+   */
+  wire: "anthropic" | "openai";
+  /**
+   * What the output ceiling is called. OpenAI moved to
+   * `max_completion_tokens`; Anthropic and the OpenAI-compatible providers
+   * still take `max_tokens`. Named per provider rather than guessed.
+   */
+  maxTokensParam: string;
+  /** The small model these one-shot jobs use — cheap enough for a free tier. */
+  model: string;
+  /**
+   * An extra, non-secret value some accounts must send alongside the key.
+   * Anthropic's identity-linked keys need the workspace the request acts in;
+   * ordinary keys need nothing and this stays empty.
+   */
+  extra?: {
+    envVar: string;
+    label: string;
+    hint: string;
+  };
 }
 
 /** What the app can actually do right now. */
@@ -37,6 +62,14 @@ export interface AiCapabilities {
    * changed there; 'file' is .env.local, which Settings can edit.
    */
   keySource: "env" | "file" | null;
+  /**
+   * The provider's extra value, or null. Unlike the key this is shown back:
+   * a workspace id is an identifier, not a credential, and being able to see
+   * what was stored is the difference between fixing a typo and guessing.
+   */
+  extraValue: string | null;
+  /** The model actually in use — the provider default unless overridden. */
+  model: string | null;
   /** True when a level above local was chosen but no key was found. */
   degraded: boolean;
 }

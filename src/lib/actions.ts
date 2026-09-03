@@ -3,6 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { keySourceFor as readKeySourceFor, providerById } from "./ai";
 import { writeEnvValue } from "./envFile";
+import { commitImport } from "./import/commit";
+import { extractText } from "./import/extract";
+import { parseCv } from "./import/parse";
+import { refineCv } from "./import/refine";
+import type { ImportedCv } from "./import/types";
 import { db, nextOrder } from "./db";
 import { listExports, removeExport } from "./exports";
 import { touchCv } from "./queries";
@@ -143,6 +148,88 @@ export async function saveAiKey(providerId: string, key: string | null) {
 
   revalidatePath("/settings");
   revalidatePath("/", "layout");
+}
+
+/**
+ * Save the provider's extra value — for Anthropic, the workspace an
+ * identity-linked key acts in. Not a secret, but it lives beside the key so
+ * there is one place to look.
+ */
+export async function saveAiModel(providerId: string, value: string | null) {
+  const provider = providerById(providerId);
+  if (!provider) throw new Error(`Unknown provider: ${providerId}`);
+
+  const trimmed = value?.trim() ?? "";
+  // Clearing it falls back to the provider's default rather than sending "".
+  writeEnvValue(`${provider.envVar}_MODEL`, trimmed ? trimmed : null);
+
+  revalidatePath("/settings");
+  revalidatePath("/", "layout");
+}
+
+export async function saveAiExtra(providerId: string, value: string | null) {
+  const provider = providerById(providerId);
+  if (!provider?.extra) throw new Error(`No extra setting for ${providerId}.`);
+
+  const trimmed = value?.trim() ?? "";
+  writeEnvValue(provider.extra.envVar, trimmed ? trimmed : null);
+
+  revalidatePath("/settings");
+  revalidatePath("/", "layout");
+}
+
+/* ------------------------------------------------------------------ */
+/* Import                                                              */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Read a CV and return what it found. Writes nothing.
+ *
+ * The offline parse always runs; refinement only improves on it when a key is
+ * configured, and falls back to it on any failure. Splitting reading from
+ * writing is the point: everything here is a proposal the person reviews
+ * before `applyImport` puts any of it in the library.
+ */
+export async function readCv(input: {
+  text?: string;
+  file?: { name: string; type: string; base64: string };
+}): Promise<{ cv: ImportedCv | null; problem?: string; note?: string }> {
+  let text = (input.text ?? "").trim();
+
+  if (!text && input.file) {
+    const extracted = await extractText({
+      name: input.file.name,
+      type: input.file.type,
+      bytes: Buffer.from(input.file.base64, "base64"),
+    });
+    if (extracted.problem) return { cv: null, problem: extracted.problem };
+    text = extracted.text;
+  }
+
+  if (!text.trim()) {
+    return { cv: null, problem: "There was nothing to read. Paste your CV, or choose a file." };
+  }
+
+  const offline = parseCv(text);
+  const { cv, note } = await refineCv(text, offline);
+
+  if (cv.sections.length === 0) {
+    return {
+      cv,
+      note,
+      problem:
+        "Nothing recognisable came out of that. Check the text below reads as a CV, or add records by hand.",
+    };
+  }
+  return { cv, note };
+}
+
+/** Write a reviewed import into the library. Only what is still ticked. */
+export async function applyImport(cv: ImportedCv, applyProfile: boolean) {
+  const summary = commitImport(cv, { applyProfile });
+  revalidatePath("/library");
+  revalidatePath("/", "layout");
+  return summary;
 }
 
 /* ------------------------------------------------------------------ */

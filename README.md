@@ -175,11 +175,16 @@ levels, and the one in force decides what features can do:
 | **Assisted** | A key, usage small enough for most free tiers | One-shot jobs on text you already have |
 | **Full** | A key and real usage | Everything above, plus features that call out as you work |
 
-Choose the level in the app; put the key in `.env.local`, which is gitignored:
+Choose the level in the app, then paste a key into Settings — it is written to
+`.env.local` for you. You can also set it by hand:
 
 ```bash
 cp .env.example .env.local   # then fill in the provider you picked
 ```
+
+**[Choosing a provider and getting a key](docs/providers.md)** covers which to
+pick — Groq is the easiest place to start, with a free tier that comfortably
+covers this — and what to do when a model returns 404.
 
 Keys are read from the environment and never written to the database, so a
 backup of your data never contains a secret, and losing the database does not

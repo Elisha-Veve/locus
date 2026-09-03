@@ -19,6 +19,44 @@ same schema.
 
 ### Added
 
+- **Read a CV into the library.** Paste one, or choose a PDF, and Locus turns
+  it into sections, records, bullets and skills for you to check before any of
+  it is saved. Nothing is written until you say so, and every section, record
+  and individual bullet can be edited or unticked first.
+
+  It works with no key at all: the offline reader uses layout alone and handles
+  the usual shapes — dates on their own line, `Label: a, b, c` skill groups,
+  single-date certifications. At the `assisted` level a provider is asked to
+  improve that reading, and if the call fails or returns something malformed
+  the offline reading is used instead and you are told.
+
+  Nothing a model returns is trusted structurally. `npm run check:import` runs
+  36 checks over the parser and the coercion barrier, including malformed
+  dates, wrong-typed collections and oversized fields, with no key or network
+  needed. CI runs it.
+
+- **Anthropic, OpenAI and Groq** as providers, chosen in Settings. Groq's free
+  tier is the easiest place to start —
+  [docs/providers.md](docs/providers.md) covers getting a key for each, and
+  what to do when a model returns 404.
+
+- **The model is configurable.** Each provider ships a default, and
+  `LOCUS_AI_<PROVIDER>_MODEL` — or the field in Settings — overrides it. Which
+  models an account can actually reach is not knowable in advance: they are
+  retired, renamed and gated by tier, and two shipped defaults were wrong in a
+  single afternoon. A 404 is now a ten-second fix rather than a release.
+
+- **A workspace id for Anthropic identity-linked keys**, which must say which
+  workspace a request acts in. Ordinary keys need nothing and the header is
+  omitted.
+
+### Fixed
+
+- A failed provider call reported only its status code. The body carries the
+  provider's own explanation — it does not echo the key — and withholding it
+  turned a wrong model id into an unexplained 400. The message is passed
+  through, trimmed, for every provider shape and for replies that are not JSON.
+
 - CI on every pull request and push to `main` — typecheck, build and the
   migration check, on Node 22.18 and 24. Closes #4.
 - A contributor workflow in `CONTRIBUTING.md`, `CODEOWNERS` to route reviews,
