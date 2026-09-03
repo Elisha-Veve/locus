@@ -35,6 +35,10 @@ same schema.
   dates, wrong-typed collections and oversized fields, with no key or network
   needed. CI runs it.
 
+- **The default theme follows the OS.** It used to default to Light, so anyone
+  working in dark got a bright page until they went and changed it. `System`
+  was already offered; it is now what you start on.
+
 - **A new library offers a choice instead of filling itself in.** Locus used to
   seed a fictional CV on first load, so an empty database quietly became
   somebody else's invented career and the first job was deleting it. An empty

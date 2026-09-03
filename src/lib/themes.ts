@@ -32,7 +32,18 @@ export const THEMES: ThemeOption[] = [
   { id: "garnet", label: "Garnet", mode: "dark", swatch: ["#170d13", "#20141c", "#ec6fa8"] },
 ];
 
-export const DEFAULT_THEME = "light";
+/**
+ * What someone gets before they have chosen anything: follow the OS.
+ *
+ * Kept separate from the pair below because these are different questions.
+ * This is the starting preference; those are the concrete palettes "system"
+ * resolves to. One constant serving both meant "system" resolved to itself.
+ */
+export const DEFAULT_CHOICE = "system";
+
+/** The neutral pair the OS preference maps onto. */
+export const SYSTEM_LIGHT = "light";
+export const SYSTEM_DARK = "dark";
 export const THEME_STORAGE_KEY = "locus.theme";
 
 /** Themes that ask the browser for dark native controls and scrollbars. */
