@@ -90,6 +90,22 @@ Both the live preview and the PDF render `src/components/CvDocument.tsx`
 through that one stylesheet, so they cannot drift apart. If you change either,
 export a PDF and look at it; `/print/<id>` shows the bare document.
 
+## Claude Code settings
+
+`.claude/settings.json` is checked in, so anyone using Claude Code in this repo
+picks it up. Beyond turning off commit attribution it does two things:
+
+- Blocks reading `.env.local`, which holds provider keys. `.gitignore` keeps
+  that file out of commits; it does nothing to stop the contents being read
+  into a transcript.
+- Refuses a production build, or deleting `.next`, while a dev server is
+  listening (`.claude/hooks/no-build-over-dev-server.sh`). Building over
+  `.next` leaves the running server with half a build and every route 500s on
+  "Cannot find module" — a failure whose message points nowhere near its cause.
+  Stop the server, then build.
+
+Personal overrides go in `.claude/settings.local.json`, which is gitignored.
+
 ## Screenshots
 
 Documentation images must never contain real data. With `npm run dev:demo`

@@ -13,3 +13,7 @@ next-env.d.ts
 # All runtime state: the SQLite database (plus its -wal/-shm sidecars, which
 # contain real data pages), the demo database, and archived PDF exports.
 data/
+
+# Personal Claude Code overrides for this project. .claude/settings.json is
+# tracked and shared; this file is yours alone and may hold local paths.
+.claude/settings.local.json
