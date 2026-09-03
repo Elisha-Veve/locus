@@ -155,6 +155,18 @@ export async function saveAiKey(providerId: string, key: string | null) {
  * identity-linked key acts in. Not a secret, but it lives beside the key so
  * there is one place to look.
  */
+export async function saveAiModel(providerId: string, value: string | null) {
+  const provider = providerById(providerId);
+  if (!provider) throw new Error(`Unknown provider: ${providerId}`);
+
+  const trimmed = value?.trim() ?? "";
+  // Clearing it falls back to the provider's default rather than sending "".
+  writeEnvValue(`${provider.envVar}_MODEL`, trimmed ? trimmed : null);
+
+  revalidatePath("/settings");
+  revalidatePath("/", "layout");
+}
+
 export async function saveAiExtra(providerId: string, value: string | null) {
   const provider = providerById(providerId);
   if (!provider?.extra) throw new Error(`No extra setting for ${providerId}.`);

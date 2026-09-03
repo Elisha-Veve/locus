@@ -87,7 +87,7 @@ export const AI_PROVIDERS: AiProviderInfo[] = [
     wire: "openai",
     // Groq is OpenAI-compatible but predates the rename.
     maxTokensParam: "max_tokens",
-    model: "llama-3.3-70b-versatile",
+    model: "openai/gpt-oss-120b",
   },
 ];
 
@@ -110,6 +110,23 @@ const AUTH_HEADERS: Record<
   openai: (key) => ({ authorization: `Bearer ${key}` }),
   groq: (key) => ({ authorization: `Bearer ${key}` }),
 };
+
+/**
+ * Which model to ask for.
+ *
+ * The per-provider default is a starting point, not a fact: a model can be
+ * retired, renamed, or simply not enabled on a given account, and the failure
+ * is a 404 that only the account holder can resolve. `LOCUS_AI_<PROVIDER>_MODEL`
+ * overrides it, so that is a ten-second fix in Settings rather than a code
+ * change. Twice now a hardcoded id has been wrong for the person using it.
+ */
+export function readModel(provider: AiProviderInfo): string {
+  const name = `${provider.envVar}_MODEL`;
+  const fromFile = readEnvValue(name);
+  if (fromFile) return fromFile;
+  const fromEnv = process.env[name]?.trim();
+  return fromEnv ? fromEnv : provider.model;
+}
 
 /** The provider's extra value, from .env.local first then the environment. */
 export function readExtra(provider: AiProviderInfo): string | null {
@@ -184,6 +201,7 @@ export function getAiCapabilities(): AiCapabilities {
     hasKey,
     keySource: found?.source ?? null,
     extraValue: provider ? readExtra(provider) : null,
+    model: provider ? readModel(provider) : null,
     degraded,
   };
 }
@@ -223,7 +241,7 @@ function buildRequest(
   return {
     url: provider.endpoint,
     body: JSON.stringify({
-      model: provider.model,
+      model: readModel(provider),
       [provider.maxTokensParam]: maxTokens,
       messages: [{ role: "user", content: prompt }],
     }),

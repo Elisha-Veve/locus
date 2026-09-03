@@ -68,6 +68,8 @@ export interface AiCapabilities {
    * what was stored is the difference between fixing a typo and guessing.
    */
   extraValue: string | null;
+  /** The model actually in use — the provider default unless overridden. */
+  model: string | null;
   /** True when a level above local was chosen but no key was found. */
   degraded: boolean;
 }
