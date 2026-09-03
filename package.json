@@ -1,11 +1,12 @@
 {
   "name": "locus",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "private": true,
   "scripts": {
     "dev": "next dev -p 3210",
     "dev:demo": "LOCUS_DB=data/demo.db next dev -p 3211",
     "screenshots": "node scripts/screenshots.mjs",
+    "check:migrations": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-migrations.mts",
     "build": "next build",
     "start": "next start -p 3210"
   },

@@ -10,8 +10,10 @@ and versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html):
 - **Minor** — new capability, backwards compatible.
 - **Patch** — fixes only.
 
-Schema changes ship with a migration in `src/lib/db.ts`, which runs on startup;
-existing databases are upgraded in place.
+Schema changes ship with a migration in `src/lib/migrations.ts`, which runs on
+startup; existing databases are upgraded in place. `npm run check:migrations`
+verifies that upgrading an old database and installing a new one produce the
+same schema.
 
 ## [1.1.0] — 2026-09-03
 
@@ -39,6 +41,28 @@ existing databases are upgraded in place.
 
 - A record created but never filled in no longer puts an empty section heading
   on the exported CV.
+
+## [1.2.0] — 2026-09-03
+
+Internal only — nothing changes in the app, and no action is needed to upgrade.
+
+### Added
+
+- `npm run check:migrations`, which builds one database from `schema.sql` and
+  another from a released baseline plus every migration, then asserts the two
+  end up with the same schema. Without it, adding a column to `schema.sql` and
+  forgetting the migration is invisible until someone who installed earlier
+  hits a missing column.
+- `test/baselines/` holding each released schema, so upgrades keep being tested
+  from the versions people actually have.
+
+### Changed
+
+- Migrations moved out of `db.ts` into `src/lib/migrations.ts` as a numbered,
+  ordered list recorded in SQLite's `user_version`. Previously each migration
+  detected whether it had already run in its own ad-hoc way — one checked for a
+  column, another matched a string inside the table's SQL — and nothing
+  recorded what had been applied.
 
 ## [Unreleased]
 
@@ -84,6 +108,7 @@ First release.
 - Data lives in `data/locus.db` and is gitignored. Back it up yourself.
 - Deleting a library record removes it from past CVs as well.
 
-[Unreleased]: https://github.com/Elisha-Veve/locus/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/Elisha-Veve/locus/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/Elisha-Veve/locus/releases/tag/v1.2.0
 [1.1.0]: https://github.com/Elisha-Veve/locus/releases/tag/v1.1.0
 [1.0.0]: https://github.com/Elisha-Veve/locus/releases/tag/v1.0.0

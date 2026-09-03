@@ -160,11 +160,42 @@ Merriweather, so an identical multiplier would leave the serif styles cramped
 and the sans ones loose. The multipliers are tuned so leading divided by
 x-height lands in a narrow band instead.
 
+## Schema changes
+
+`src/lib/schema.sql` is what a brand new database gets. `src/lib/migrations.ts`
+is what an existing one gets — numbered steps applied in order and recorded in
+SQLite's `user_version`, so each runs exactly once. Both run on startup; there
+is no separate command to remember.
+
+Adding a change means doing two things:
+
+1. Edit `schema.sql` so new installs get it.
+2. Add a migration so existing installs get it. Keep the `up` guarded and safe
+   to re-run — databases created before the ledger existed sit at version 0
+   with the changes already applied and must survive a replay.
+
+Then run the check:
+
+```bash
+npm run check:migrations
+```
+
+It builds one database from `schema.sql` and another from each released
+baseline in `test/baselines/` plus every migration, and asserts the two end up
+with the same schema. Forgetting step 2 is the easy mistake, and it is
+invisible until someone who installed months ago hits a missing column — this
+is what catches it.
+
+When you cut a release that changes the schema, drop that version's
+`schema.sql` into `test/baselines/` so future upgrades keep getting tested from
+it.
+
 ## Layout
 
 | Path | What it is |
 | --- | --- |
 | `src/lib/schema.sql` | Tables, with the overlay design explained inline |
+| `src/lib/migrations.ts` | Ordered schema changes for existing databases |
 | `src/lib/queries.ts` | Reads: library, builder state, resolved document |
 | `src/lib/resolve.ts` | Pure selection → document. Runs on server and client |
 | `src/lib/actions.ts` | Every write, as server actions |
