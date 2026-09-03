@@ -13,12 +13,38 @@ npm run dev
 Open <http://localhost:3210>. On first run the database is seeded with a
 fictional sample so there is something to click.
 
-Requires Node 20 or newer. `npm install` downloads a Chromium build for
-Puppeteer, which is what renders the PDF.
+Requires Node 22.18 or newer. `npm run check:migrations` runs a `.mts` file
+directly and older versions cannot strip the types, so the check fails on Node
+20 even though the app itself runs. `npm install` downloads a Chromium build
+for Puppeteer, which is what renders the PDF.
 
 Your own data lives in `data/locus.db` and is gitignored. If you would rather
 not mix it with development, `npm run dev:demo` runs against a throwaway
 `data/demo.db` on port 3211.
+
+## Opening a pull request
+
+1. **Say something first** for anything beyond a small fix. An issue, or a
+   comment on an existing one, saves you writing code that turns out not to be
+   wanted. Issues labelled [good first
+   issue](https://github.com/Elisha-Veve/locus/labels/good%20first%20issue) are
+   already agreed.
+2. **Fork and branch.** Branch from `main`, one topic per branch. Name it for
+   what it does — `mobile-builder-layout`, `fix-empty-record-heading`.
+3. **Keep the diff to its subject.** Unrelated reformatting hides the change
+   inside noise. If you spot something else worth doing, say so in the PR and
+   leave it for its own change.
+4. **Write the message for someone reading it in a year.** Say why, not just
+   what. If it closes an issue, put `Closes #12` in the description.
+5. **Open the PR against `main`** and fill in the checklist. CI runs the three
+   checks below on Node 22.18 and 24; a red run is the fastest way to find out
+   something needs another look.
+6. **Expect a review.** Comments are about the code. Push follow-up commits to
+   the same branch rather than force-pushing, so the review stays readable —
+   it all squashes on merge anyway.
+
+Merges are squashed, so your branch arrives as one commit on `main`. Write the
+PR title as the commit subject you want.
 
 ## Before you open a pull request
 
@@ -28,8 +54,10 @@ npm run build             # production build
 npm run check:migrations  # schema and migrations agree
 ```
 
-There is no test framework yet; these three are what stands in for one.
-Adding tests would be a genuinely useful contribution.
+There is no test framework yet; these three are what stands in for one, and CI
+runs them on every pull request. Adding tests would be a genuinely useful
+contribution — see
+[#4](https://github.com/Elisha-Veve/locus/issues/4).
 
 ## Three things that are easy to get wrong
 

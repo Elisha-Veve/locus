@@ -37,6 +37,9 @@
   },
   "description": "Keep every experience on file, put the relevant ones forward.",
   "license": "MIT",
+  "engines": {
+    "node": ">=22.18"
+  },
   "author": "Elisha Elorm Kwesi Amenuveve",
   "repository": {
     "type": "git",

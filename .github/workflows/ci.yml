@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# A new push to a PR makes the previous run pointless.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Node ${{ matrix.node }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        # 22.18 is the floor: scripts/check-migrations.mts relies on Node
+        # stripping TypeScript natively, which is unflagged from 22.18 and
+        # 23.6 onward. 24 is what most people will actually have.
+        node: ["22.18", "24"]
+
+    env:
+      # Rendering a PDF is the only thing that needs a browser, and nothing
+      # here renders one. Skipping the download saves ~150MB per run.
+      PUPPETEER_SKIP_DOWNLOAD: "true"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      # The one that catches the mistake this repo actually invites: a column
+      # added to schema.sql without a matching migration, which is invisible
+      # until someone who installed earlier hits a missing column.
+      - name: Migrations agree with the schema
+        run: npm run check:migrations
+
+      - name: Build
+        run: npm run build

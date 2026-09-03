@@ -34,7 +34,8 @@ Your data lives in `data/locus.db`, a SQLite file that is gitignored. On first
 run it is seeded with a small fictional sample so there is something to click;
 edit or delete all of it in the library once you have added your own.
 
-Requires Node 20+. The first `npm install` downloads a Chromium build for
+Requires Node 22.18 or newer — `npm run check:migrations` runs a TypeScript
+file directly, which older versions cannot do. The first `npm install` downloads a Chromium build for
 Puppeteer, which is what renders the PDF.
 
 ## What it does

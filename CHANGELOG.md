@@ -19,6 +19,10 @@ same schema.
 
 ### Added
 
+- CI on every pull request and push to `main` — typecheck, build and the
+  migration check, on Node 22.18 and 24. Closes #4.
+- A contributor workflow in `CONTRIBUTING.md`, `CODEOWNERS` to route reviews,
+  and Dependabot for weekly dependency updates.
 - Links to both providers' key pages, shown as soon as the Provider section
   appears rather than only after picking one and finding no key.
 - A key can be pasted into Settings when one is not already in the
@@ -29,6 +33,9 @@ same schema.
 
 ### Fixed
 
+- `README.md` and `CONTRIBUTING.md` both claimed Node 20 or newer, but
+  `npm run check:migrations` runs a `.mts` file and fails outright on Node 20.
+  The floor is 22.18, now stated and declared in `engines`.
 - Changing the level twice in quick succession could leave the setting on
   whichever write landed last rather than the one chosen last. The controls are
   now disabled while a change is saving.
