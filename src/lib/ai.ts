@@ -1,4 +1,5 @@
 import { db } from "./db";
+import { readEnvValue } from "./envFile";
 import type {
   AiCapabilities,
   AiLevel,
@@ -77,9 +78,39 @@ export function providerById(id: string): AiProviderInfo | null {
   return AI_PROVIDERS.find((p) => p.id === id) ?? null;
 }
 
+/**
+ * The key, and where it came from.
+ *
+ * .env.local is consulted before process.env because process.env is only
+ * populated at boot: a key saved in Settings has to work without a restart,
+ * and after one the two agree anyway. A key exported in the shell and never
+ * saved here still works — it is simply the fallback rather than the winner.
+ */
+function readKeySource(
+  provider: AiProviderInfo,
+): { key: string; source: "env" | "file" } | null {
+  const fromFile = readEnvValue(provider.envVar);
+  if (fromFile) return { key: fromFile, source: "file" };
+
+  const fromEnv = process.env[provider.envVar]?.trim();
+  if (fromEnv) return { key: fromEnv, source: "env" };
+
+  return null;
+}
+
 function readKey(provider: AiProviderInfo): string | null {
-  const value = process.env[provider.envVar]?.trim();
-  return value ? value : null;
+  return readKeySource(provider)?.key ?? null;
+}
+
+/**
+ * Where a provider's key comes from, without revealing it. Settings needs this
+ * to know whether it is allowed to edit the key or must defer to the
+ * environment.
+ */
+export function keySourceFor(
+  provider: AiProviderInfo,
+): "env" | "file" | null {
+  return readKeySource(provider)?.source ?? null;
 }
 
 /**
@@ -94,7 +125,8 @@ export function getAiCapabilities(): AiCapabilities {
 
   const chosen: AiLevel = row?.ai_level ?? "local";
   const provider = row?.ai_provider ? providerById(row.ai_provider) : null;
-  const hasKey = provider ? readKey(provider) !== null : false;
+  const found = provider ? readKeySource(provider) : null;
+  const hasKey = found !== null;
   const degraded = chosen !== "local" && !hasKey;
 
   return {
@@ -102,6 +134,7 @@ export function getAiCapabilities(): AiCapabilities {
     chosen,
     provider,
     hasKey,
+    keySource: found?.source ?? null,
     degraded,
   };
 }

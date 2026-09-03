@@ -32,6 +32,11 @@ export interface AiCapabilities {
   chosen: AiLevel;
   provider: AiProviderInfo | null;
   hasKey: boolean;
+  /**
+   * Where the key came from. 'env' is the real environment and can only be
+   * changed there; 'file' is .env.local, which Settings can edit.
+   */
+  keySource: "env" | "file" | null;
   /** True when a level above local was chosen but no key was found. */
   degraded: boolean;
 }

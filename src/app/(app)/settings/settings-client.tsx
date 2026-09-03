@@ -1,8 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useTransition } from "react";
-import { saveAiSettings } from "@/lib/actions";
+import { useState, useTransition } from "react";
+import { saveAiKey, saveAiSettings } from "@/lib/actions";
 import type { AiCapabilities, AiLevel, AiProviderInfo } from "@/lib/types";
 
 export function AiSettings({
@@ -16,26 +16,46 @@ export function AiSettings({
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const [keyDraft, setKeyDraft] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
-  // Whether a key is present is decided by the environment, so re-read from
+  // Whether a key is present is decided outside the browser, so re-read from
   // the server after every change rather than guessing here.
   const save = (patch: { level?: AiLevel; provider?: string }) =>
     startTransition(async () => {
+      setError(null);
       await saveAiSettings(patch);
       router.refresh();
     });
 
+  const submitKey = (value: string | null) =>
+    startTransition(async () => {
+      setError(null);
+      try {
+        await saveAiKey(capabilities.provider!.id, value);
+        setKeyDraft("");
+        router.refresh();
+      } catch (cause) {
+        setError(cause instanceof Error ? cause.message : "Could not save that key.");
+      }
+    });
+
   const needsProvider = capabilities.chosen !== "local";
+  // One change at a time. Without this, two quick clicks race and the write
+  // that lands last wins rather than the one chosen last.
+  const busy = pending;
 
   return (
-    <div className="grid gap-5" aria-busy={pending}>
+    <div className={`grid gap-5 ${busy ? "opacity-60" : ""}`} aria-busy={busy}>
       <section className="card p-5">
         <h2 className="eyebrow mb-3">Level</h2>
-        <div className="grid gap-2">
+        <fieldset disabled={busy} className="grid gap-2 border-0 p-0 m-0">
           {levels.map((level) => (
             <label
               key={level.id}
-              className="flex cursor-pointer gap-3 rounded-md border border-[var(--color-line)] p-3"
+              className={`flex gap-3 rounded-md border border-[var(--color-line)] p-3 ${
+                busy ? "cursor-not-allowed" : "cursor-pointer"
+              }`}
             >
               <input
                 type="radio"
@@ -50,7 +70,7 @@ export function AiSettings({
               </span>
             </label>
           ))}
-        </div>
+        </fieldset>
       </section>
 
       {needsProvider && (
@@ -60,6 +80,7 @@ export function AiSettings({
             <span className="text-[12.5px] muted">Which service to call</span>
             <select
               className="field"
+              disabled={busy}
               value={capabilities.provider?.id ?? ""}
               onChange={(event) => save({ provider: event.target.value })}
             >
@@ -73,39 +94,101 @@ export function AiSettings({
           </label>
 
           {capabilities.provider && (
-            <div className="mt-4 grid gap-2">
-              <p className="text-[12.5px]">
-                {capabilities.hasKey ? (
-                  <span className="font-medium">Key found. Ready to use.</span>
-                ) : (
-                  <span className="font-medium">No key found.</span>
-                )}
-              </p>
-              {!capabilities.hasKey && (
-                <p className="text-[12.5px] muted">
-                  Put your key in{" "}
-                  <code className="rounded bg-[var(--color-surface-2)] px-1">
-                    .env.local
-                  </code>{" "}
-                  as{" "}
-                  <code className="rounded bg-[var(--color-surface-2)] px-1">
-                    {capabilities.provider.envVar}=…
-                  </code>{" "}
-                  and restart the app.{" "}
-                  <a
-                    className="underline"
-                    href={capabilities.provider.keysUrl}
-                    target="_blank"
-                    rel="noreferrer noopener"
-                  >
-                    Get a key
-                  </a>
-                  .
-                </p>
+            <div className="mt-4 grid gap-3">
+              {capabilities.hasKey ? (
+                <>
+                  <p className="text-[12.5px]">
+                    <span className="font-medium">Key found.</span>{" "}
+                    <span className="muted">
+                      {capabilities.keySource === "env"
+                        ? `Set in the environment as ${capabilities.provider.envVar}.`
+                        : "Saved in .env.local."}
+                    </span>
+                  </p>
+                  {capabilities.keySource === "file" ? (
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        className="btn"
+                        disabled={busy}
+                        onClick={() => submitKey(null)}
+                      >
+                        Remove key
+                      </button>
+                    </div>
+                  ) : (
+                    <p className="text-[12.5px] muted">
+                      Change or remove it where you set it. Settings does not
+                      edit the environment.
+                    </p>
+                  )}
+                </>
+              ) : (
+                <>
+                  <p className="text-[12.5px]">
+                    <span className="font-medium">No key found.</span>
+                  </p>
+                  <label className="grid gap-1.5">
+                    <span className="text-[12.5px] muted">
+                      Paste a key to save it to{" "}
+                      <code className="rounded bg-[var(--color-surface-2)] px-1">
+                        .env.local
+                      </code>
+                      , or set{" "}
+                      <code className="rounded bg-[var(--color-surface-2)] px-1">
+                        {capabilities.provider.envVar}
+                      </code>{" "}
+                      yourself and reload.
+                    </span>
+                    <div className="flex gap-2">
+                      <input
+                        type="password"
+                        className="field flex-1"
+                        autoComplete="off"
+                        spellCheck={false}
+                        placeholder={`${capabilities.provider.envVar}=…`}
+                        value={keyDraft}
+                        disabled={busy}
+                        onChange={(event) => setKeyDraft(event.target.value)}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter" && keyDraft.trim()) {
+                            submitKey(keyDraft);
+                          }
+                        }}
+                      />
+                      <button
+                        type="button"
+                        className="btn"
+                        disabled={busy || !keyDraft.trim()}
+                        onClick={() => submitKey(keyDraft)}
+                      >
+                        Save key
+                      </button>
+                    </div>
+                  </label>
+                  <p className="text-[12.5px] muted">
+                    <a
+                      className="underline"
+                      href={capabilities.provider.keysUrl}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                    >
+                      Get a key
+                    </a>
+                    .
+                  </p>
+                </>
               )}
+
+              {error && (
+                <p className="text-[12.5px] font-medium">{error}</p>
+              )}
+
               <p className="text-[12.5px] muted">
-                Keys are read from the environment and never written to the
-                database, so backing up your data never backs up a secret.
+                Keys are kept in .env.local, which is gitignored, and never
+                written to the database — so backing up or exporting your data
+                never carries a secret with it. A saved key is never shown
+                again.
               </p>
             </div>
           )}

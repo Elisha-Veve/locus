@@ -1,6 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { keySourceFor as readKeySourceFor, providerById } from "./ai";
+import { writeEnvValue } from "./envFile";
 import { db, nextOrder } from "./db";
 import { listExports, removeExport } from "./exports";
 import { touchCv } from "./queries";
@@ -105,6 +107,39 @@ export async function saveAiSettings(patch: {
       level: patch.level ?? current.ai_level,
       provider: patch.provider ?? current.ai_provider,
     });
+
+  revalidatePath("/settings");
+  revalidatePath("/", "layout");
+}
+
+/**
+ * Save a provider key to .env.local, or remove it with null.
+ *
+ * The key goes to a file rather than the database so that backing up or
+ * exporting your data can never carry a credential with it. It is never read
+ * back to the browser: the UI is told whether a key exists, not what it is.
+ *
+ * Only a known provider's variable can be written, so this cannot be used to
+ * set arbitrary environment values.
+ */
+export async function saveAiKey(providerId: string, key: string | null) {
+  const provider = providerById(providerId);
+  if (!provider) throw new Error(`Unknown provider: ${providerId}`);
+
+  const trimmed = key?.trim() ?? "";
+  if (key !== null && !trimmed) {
+    throw new Error("A key cannot be empty.");
+  }
+
+  // A key already in the real environment wins over the file, so writing one
+  // here would look like it had done nothing.
+  if (readKeySourceFor(provider) === "env") {
+    throw new Error(
+      `${provider.envVar} is set in the environment. Change it there, not here.`,
+    );
+  }
+
+  writeEnvValue(provider.envVar, key === null ? null : trimmed);
 
   revalidatePath("/settings");
   revalidatePath("/", "layout");
