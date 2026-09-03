@@ -51,8 +51,12 @@ export interface AiCapabilities {
    * changed there; 'file' is .env.local, which Settings can edit.
    */
   keySource: "env" | "file" | null;
-  /** Whether the provider's extra value (e.g. a workspace id) is set. */
-  hasExtra: boolean;
+  /**
+   * The provider's extra value, or null. Unlike the key this is shown back:
+   * a workspace id is an identifier, not a credential, and being able to see
+   * what was stored is the difference between fixing a typo and guessing.
+   */
+  extraValue: string | null;
   /** True when a level above local was chosen but no key was found. */
   degraded: boolean;
 }

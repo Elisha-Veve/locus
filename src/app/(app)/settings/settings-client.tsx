@@ -17,7 +17,7 @@ export function AiSettings({
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [keyDraft, setKeyDraft] = useState("");
-  const [extraDraft, setExtraDraft] = useState("");
+  const [extraDraft, setExtraDraft] = useState(capabilities.extraValue ?? "");
   const [error, setError] = useState<string | null>(null);
 
   // Whether a key is present is decided outside the browser, so re-read from
@@ -46,7 +46,6 @@ export function AiSettings({
       setError(null);
       try {
         await saveAiExtra(capabilities.provider!.id, value);
-        setExtraDraft("");
         router.refresh();
       } catch (cause) {
         setError(cause instanceof Error ? cause.message : "Could not save that.");
@@ -206,7 +205,9 @@ export function AiSettings({
                       {capabilities.provider.extra.label}
                     </span>{" "}
                     <span className="muted">
-                      {capabilities.hasExtra ? "— set." : "— not set."}
+                      {capabilities.extraValue
+                        ? `— ${capabilities.extraValue}`
+                        : "— not set."}
                     </span>
                   </span>
                   <span className="text-[12.5px] muted">
@@ -236,7 +237,7 @@ export function AiSettings({
                     >
                       Save
                     </button>
-                    {capabilities.hasExtra && (
+                    {capabilities.extraValue && (
                       <button
                         type="button"
                         className="btn"

@@ -143,10 +143,7 @@ export function keySourceFor(
   return readKeySource(provider)?.source ?? null;
 }
 
-/** Whether the provider's extra value is set. Never returns the value itself. */
-export function hasExtraFor(provider: AiProviderInfo): boolean {
-  return readExtra(provider) !== null;
-}
+
 
 /**
  * What is available right now. A level above local with no key in the
@@ -170,7 +167,7 @@ export function getAiCapabilities(): AiCapabilities {
     provider,
     hasKey,
     keySource: found?.source ?? null,
-    hasExtra: provider ? readExtra(provider) !== null : false,
+    extraValue: provider ? readExtra(provider) : null,
     degraded,
   };
 }
