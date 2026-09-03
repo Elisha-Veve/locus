@@ -19,6 +19,14 @@ same schema.
 
 ### Added
 
+- **Library sections start collapsed.** A library of any size rendered every
+  field at once — 15 sections came to 90 inputs over ten screens, which is
+  something to scroll rather than read. Collapsed it is 22 inputs over two and
+  a half, and the headers read as an index: title, layout and how much is
+  inside. Expand all / Collapse all sits above them with a count, what is open
+  is remembered between visits, and a section you have just added opens itself
+  because you made it in order to fill it in.
+
 - **Read a CV into the library.** Paste one, or choose a PDF, and Locus turns
   it into sections, records, bullets and skills for you to check before any of
   it is saved. Nothing is written until you say so, and every section, record

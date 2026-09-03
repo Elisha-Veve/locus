@@ -44,13 +44,84 @@ import type {
   SectionKind,
 } from "@/lib/types";
 
+
+/**
+ * Which sections are open, remembered between visits.
+ *
+ * Sections start collapsed: a library of any size renders hundreds of fields
+ * at once otherwise, and the page becomes something to scroll rather than
+ * read. Collapsed, the headers are an index — title, kind and how much is
+ * inside — which is most of what a contents list would have given.
+ *
+ * The choice is kept in localStorage because losing it on every navigation
+ * would make "expand all" pointless. Read after mount rather than during
+ * render, so the server and the first client render agree.
+ */
+const OPEN_SECTIONS_KEY = "locus.library.open";
+
+function readOpenSections(): Set<number> {
+  try {
+    const raw = localStorage.getItem(OPEN_SECTIONS_KEY);
+    if (!raw) return new Set();
+    const ids = JSON.parse(raw) as unknown;
+    return new Set(Array.isArray(ids) ? ids.filter((n) => typeof n === "number") : []);
+  } catch {
+    return new Set();
+  }
+}
+
+function writeOpenSections(ids: Set<number>): void {
+  try {
+    localStorage.setItem(OPEN_SECTIONS_KEY, JSON.stringify([...ids]));
+  } catch {
+    // Private window, or storage disabled — the page still works, it just
+    // forgets. Not worth failing over.
+  }
+}
+
 export function LibraryEditor({ library }: { library: Library }) {
   const [, startTransition] = useTransition();
   const sectionIds = library.sections.map((s) => s.id);
+  const [openIds, setOpenIds] = useState<Set<number>>(new Set());
+
+  // Adopt what was open last time. After mount, so the markup matches.
+  useEffect(() => setOpenIds(readOpenSections()), []);
+
+  const setOpen = (next: Set<number>) => {
+    setOpenIds(next);
+    writeOpenSections(next);
+  };
+
+  const toggle = (id: number) => {
+    const next = new Set(openIds);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    setOpen(next);
+  };
+
+  const openCount = library.sections.filter((s) => openIds.has(s.id)).length;
+  const allOpen = openCount === library.sections.length && openCount > 0;
 
   return (
     <div className="grid gap-4">
       <ProfileCard profile={library.profile} />
+
+      {library.sections.length > 1 && (
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            className="btn btn-sm"
+            onClick={() =>
+              setOpen(allOpen ? new Set() : new Set(sectionIds))
+            }
+          >
+            {allOpen ? "Collapse all" : "Expand all"}
+          </button>
+          <span className="text-[12px] muted">
+            {openCount} of {library.sections.length} open
+          </span>
+        </div>
+      )}
 
       <SortableList
         ids={sectionIds}
@@ -59,13 +130,21 @@ export function LibraryEditor({ library }: { library: Library }) {
         <div className="grid gap-4">
           {library.sections.map((section) => (
             <SortableRow key={section.id} id={section.id}>
-              {(handle) => <SectionCard section={section} handle={handle} />}
+              {(handle) => (
+                <SectionCard
+                  section={section}
+                  handle={handle}
+                  open={openIds.has(section.id)}
+                  onToggle={() => toggle(section.id)}
+                />
+              )}
             </SortableRow>
           ))}
         </div>
       </SortableList>
 
-      <AddSectionForm />
+      {/* A section you have just made is one you mean to fill in. */}
+      <AddSectionForm onCreated={(id) => setOpen(new Set(openIds).add(id))} />
     </div>
   );
 }
@@ -111,12 +190,15 @@ function ProfileCard({ profile }: { profile: Library["profile"] }) {
 function SectionCard({
   section,
   handle,
+  open,
+  onToggle,
 }: {
   section: LibrarySection;
   handle: React.ReactNode;
+  open: boolean;
+  onToggle: () => void;
 }) {
   const [, startTransition] = useTransition();
-  const [open, setOpen] = useState(true);
 
   const childCount =
     section.kind === "skills"
@@ -139,7 +221,7 @@ function SectionCard({
           type="button"
           className="btn btn-ghost btn-sm w-6 px-0"
           aria-label={open ? "Collapse section" : "Expand section"}
-          onClick={() => setOpen((v) => !v)}
+          onClick={onToggle}
         >
           <Chevron open={open} />
         </button>
@@ -726,7 +808,7 @@ const SECTION_PRESETS: Array<{
   { id: "prose", label: "A paragraph (summary)", kind: "prose", dateMode: "none" },
 ];
 
-function AddSectionForm() {
+function AddSectionForm({ onCreated }: { onCreated: (id: number) => void }) {
   const [title, setTitle] = useState("");
   const [preset, setPreset] = useState(SECTION_PRESETS[0].id);
   const [, startTransition] = useTransition();
@@ -741,9 +823,10 @@ function AddSectionForm() {
         const chosen =
           SECTION_PRESETS.find((p) => p.id === preset) ?? SECTION_PRESETS[0];
         setTitle("");
-        startTransition(() =>
-          void createSection(next, chosen.kind, chosen.dateMode),
-        );
+        startTransition(async () => {
+          const id = await createSection(next, chosen.kind, chosen.dateMode);
+          if (typeof id === "number") onCreated(id);
+        });
       }}
     >
       <label className="grid flex-1 gap-1.5">
