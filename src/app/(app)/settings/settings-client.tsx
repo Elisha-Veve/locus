@@ -93,6 +93,23 @@ export function AiSettings({
             </select>
           </label>
 
+          <p className="mt-2 text-[12.5px] muted">
+            Get a key:{" "}
+            {providers.map((provider, index) => (
+              <span key={provider.id}>
+                {index > 0 && " · "}
+                <a
+                  className="underline"
+                  href={provider.keysUrl}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                >
+                  {provider.label}
+                </a>
+              </span>
+            ))}
+          </p>
+
           {capabilities.provider && (
             <div className="mt-4 grid gap-3">
               {capabilities.hasKey ? (
@@ -166,17 +183,6 @@ export function AiSettings({
                       </button>
                     </div>
                   </label>
-                  <p className="text-[12.5px] muted">
-                    <a
-                      className="underline"
-                      href={capabilities.provider.keysUrl}
-                      target="_blank"
-                      rel="noreferrer noopener"
-                    >
-                      Get a key
-                    </a>
-                    .
-                  </p>
                 </>
               )}
 

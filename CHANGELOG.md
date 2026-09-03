@@ -19,6 +19,8 @@ same schema.
 
 ### Added
 
+- Links to both providers' key pages, shown as soon as the Provider section
+  appears rather than only after picking one and finding no key.
 - A key can be pasted into Settings when one is not already in the
   environment. It is written to `.env.local` — never the database — so backing
   up or exporting your data still cannot carry a credential with it. The file
