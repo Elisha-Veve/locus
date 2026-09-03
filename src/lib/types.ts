@@ -1,4 +1,6 @@
-export type SectionKind = "entries" | "skills";
+export type SectionKind = "entries" | "skills" | "prose";
+/** How an entries section prints its dates. */
+export type DateMode = "range" | "single" | "none";
 
 export interface Profile {
   full_name: string;
@@ -13,6 +15,17 @@ export interface Section {
   id: number;
   title: string;
   kind: SectionKind;
+  date_mode: DateMode;
+  sort_order: number;
+  archived: number;
+}
+
+/** One paragraph variant in a prose section (a summary, profile, objective). */
+export interface Prose {
+  id: number;
+  section_id: number;
+  label: string;
+  body: string;
   sort_order: number;
   archived: number;
 }
@@ -97,6 +110,7 @@ export interface LibrarySkillGroup extends SkillGroup {
 export interface LibrarySection extends Section {
   entries: LibraryEntry[];
   skillGroups: LibrarySkillGroup[];
+  prose: Prose[];
 }
 export interface Library {
   profile: Profile;
@@ -125,12 +139,19 @@ export interface BuilderSkillGroup extends SkillGroup {
   cvOrder: number;
   skills: BuilderSkill[];
 }
+export interface BuilderProse extends Prose {
+  included: boolean;
+  cvOrder: number;
+  overrideText: string | null;
+  effectiveText: string;
+}
 export interface BuilderSection extends Section {
   included: boolean;
   cvOrder: number;
   autoOrder: boolean;
   entries: BuilderEntry[];
   skillGroups: BuilderSkillGroup[];
+  prose: BuilderProse[];
 }
 export interface BuilderCv {
   cv: Cv;
@@ -155,8 +176,10 @@ export interface RenderSkillGroup {
 export interface RenderSection {
   title: string;
   kind: SectionKind;
+  dateMode: DateMode;
   entries: RenderEntry[];
   skillGroups: RenderSkillGroup[];
+  prose: string[];
 }
 export interface RenderDoc {
   profile: Profile;

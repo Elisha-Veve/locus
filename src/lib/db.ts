@@ -41,6 +41,50 @@ function migrate(conn: Database.Database): void {
   if (!columns("cv").has("style")) {
     conn.exec("ALTER TABLE cv ADD COLUMN style TEXT NOT NULL DEFAULT 'classic'");
   }
+
+  // 'prose' was added to section.kind, and date_mode alongside it. SQLite
+  // cannot alter a CHECK constraint, so the table has to be rebuilt — this is
+  // the recipe from the SQLite docs, with foreign keys off so dropping the old
+  // table does not cascade into entry and skill_group.
+  const sectionSql = (
+    conn
+      .prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='section'")
+      .get() as { sql: string } | undefined
+  )?.sql;
+
+  if (sectionSql && !sectionSql.includes("'prose'")) {
+    conn.pragma("foreign_keys = OFF");
+    try {
+      conn.exec(`
+        BEGIN;
+        CREATE TABLE section_migrated (
+          id         INTEGER PRIMARY KEY AUTOINCREMENT,
+          title      TEXT NOT NULL,
+          kind       TEXT NOT NULL CHECK (kind IN ('entries','skills','prose')) DEFAULT 'entries',
+          date_mode  TEXT NOT NULL CHECK (date_mode IN ('range','single','none')) DEFAULT 'range',
+          sort_order INTEGER NOT NULL DEFAULT 0,
+          archived   INTEGER NOT NULL DEFAULT 0
+        );
+        INSERT INTO section_migrated (id, title, kind, sort_order, archived)
+          SELECT id, title, kind, sort_order, archived FROM section;
+        DROP TABLE section;
+        ALTER TABLE section_migrated RENAME TO section;
+        COMMIT;
+      `);
+    } catch (cause) {
+      conn.exec("ROLLBACK");
+      throw cause;
+    } finally {
+      conn.pragma("foreign_keys = ON");
+    }
+
+    const broken = conn.pragma("foreign_key_check") as unknown[];
+    if (broken.length > 0) {
+      throw new Error(
+        `Rebuilding the section table left ${broken.length} dangling reference(s).`,
+      );
+    }
+  }
 }
 
 /** Next sort_order for a child list, so new rows land at the bottom. */

@@ -4,21 +4,25 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import {
   createBullet,
   createEntry,
+  createProse,
   createSection,
   createSkill,
   createSkillGroup,
   deleteBullet,
   deleteEntry,
+  deleteProse,
   deleteSection,
   deleteSkill,
   deleteSkillGroup,
   reorderBullets,
   reorderEntries,
+  reorderProse,
   reorderSections,
   reorderSkills,
   saveProfile,
   updateBullet,
   updateEntry,
+  updateProse,
   updateSection,
   updateSkill,
   updateSkillGroup,
@@ -31,10 +35,12 @@ import {
 } from "@/components/ui";
 import { MONTH_NAMES, formatRange } from "@/lib/dates";
 import type {
+  DateMode,
   Library,
   LibraryEntry,
   LibrarySection,
   LibrarySkillGroup,
+  Prose,
   SectionKind,
 } from "@/lib/types";
 
@@ -115,7 +121,15 @@ function SectionCard({
   const childCount =
     section.kind === "skills"
       ? section.skillGroups.reduce((n, g) => n + g.skills.length, 0)
-      : section.entries.length;
+      : section.kind === "prose"
+        ? section.prose.length
+        : section.entries.length;
+  const childNoun =
+    section.kind === "skills"
+      ? "skills"
+      : section.kind === "prose"
+        ? "versions"
+        : "records";
 
   return (
     <section className="card overflow-hidden">
@@ -137,8 +151,29 @@ function SectionCard({
           onSave={(title) => updateSection(section.id, { title })}
         />
         <span className="text-[12px] muted">
-          {childCount} {section.kind === "skills" ? "skills" : "records"}
+          {childCount} {childNoun}
         </span>
+        {section.kind === "entries" && (
+          <label className="flex items-center gap-1.5 text-[12px] muted">
+            Dates
+            <select
+              className="field w-[104px] !py-[2px] text-[12px]"
+              aria-label={`${section.title} date format`}
+              value={section.date_mode}
+              onChange={(e) =>
+                startTransition(() =>
+                  void updateSection(section.id, {
+                    date_mode: e.target.value as DateMode,
+                  }),
+                )
+              }
+            >
+              <option value="range">Range</option>
+              <option value="single">Single</option>
+              <option value="none">None</option>
+            </select>
+          </label>
+        )}
         <div className="ml-auto">
           <ConfirmButton
             onConfirm={() => deleteSection(section.id)}
@@ -152,6 +187,8 @@ function SectionCard({
         <div className="px-4 py-4">
           {section.kind === "skills" ? (
             <SkillsBody section={section} />
+          ) : section.kind === "prose" ? (
+            <ProseBody section={section} />
           ) : (
             <EntriesBody section={section} />
           )}
@@ -160,14 +197,19 @@ function SectionCard({
             type="button"
             className="btn btn-sm mt-3"
             onClick={() =>
-              startTransition(() =>
-                void (section.kind === "skills"
-                  ? createSkillGroup(section.id)
-                  : createEntry(section.id)),
-              )
+              startTransition(() => {
+                if (section.kind === "skills") void createSkillGroup(section.id);
+                else if (section.kind === "prose") void createProse(section.id);
+                else void createEntry(section.id);
+              })
             }
           >
-            + {section.kind === "skills" ? "Add skill group" : "Add record"}
+            +{" "}
+            {section.kind === "skills"
+              ? "Add skill group"
+              : section.kind === "prose"
+                ? "Add a version"
+                : "Add record"}
           </button>
         </div>
       )}
@@ -197,7 +239,13 @@ function EntriesBody({ section }: { section: LibrarySection }) {
       <div className="grid gap-3">
         {section.entries.map((entry) => (
           <SortableRow key={entry.id} id={entry.id}>
-            {(handle) => <EntryCard entry={entry} handle={handle} />}
+            {(handle) => (
+              <EntryCard
+                entry={entry}
+                handle={handle}
+                dateMode={section.date_mode}
+              />
+            )}
           </SortableRow>
         ))}
       </div>
@@ -208,9 +256,11 @@ function EntriesBody({ section }: { section: LibrarySection }) {
 function EntryCard({
   entry,
   handle,
+  dateMode,
 }: {
   entry: LibraryEntry;
   handle: React.ReactNode;
+  dateMode: DateMode;
 }) {
   const [, startTransition] = useTransition();
   const [open, setOpen] = useState(false);
@@ -271,7 +321,9 @@ function EntryCard({
             />
           </div>
 
-          <DateRow entry={entry} />
+          {dateMode !== "none" && (
+            <DateRow entry={entry} dateMode={dateMode} />
+          )}
 
           <div>
             <div className="mb-1.5 flex items-center justify-between">
@@ -327,12 +379,35 @@ function EntryCard({
   );
 }
 
-function DateRow({ entry }: { entry: LibraryEntry }) {
+function DateRow({
+  entry,
+  dateMode,
+}: {
+  entry: LibraryEntry;
+  dateMode: DateMode;
+}) {
   const [, startTransition] = useTransition();
   const ongoing = entry.end_date === "";
 
   const save = (patch: { start_date?: string; end_date?: string }) =>
     startTransition(() => void updateEntry(entry.id, patch));
+
+  // A single date lives in start_date with end_date empty, which keeps
+  // newest-first sorting working without a second field to fill in.
+  if (dateMode === "single") {
+    return (
+      <div>
+        <MonthYearField
+          label="Date"
+          value={entry.start_date}
+          onCommit={(start_date) => save({ start_date, end_date: "" })}
+        />
+        <p className="-mt-1 text-[12.5px] muted">
+          Awarded or issued on. Records sort newest first.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -458,6 +533,82 @@ function MonthYearField({
 
 /* ------------------------------------------------------------------ */
 
+/**
+ * A prose section holds several versions of the same paragraph — one angled at
+ * backend work, one at leadership — and each CV picks the one that fits.
+ */
+function ProseBody({ section }: { section: LibrarySection }) {
+  const [, startTransition] = useTransition();
+  const ids = section.prose.map((p) => p.id);
+
+  if (section.prose.length === 0) {
+    return (
+      <p className="py-2 text-[13px] muted">
+        Add a version to write your summary. Keep several if you angle it
+        differently for different roles — each CV picks one.
+      </p>
+    );
+  }
+
+  return (
+    <SortableList
+      ids={ids}
+      onReorder={(next) => startTransition(() => void reorderProse(next))}
+    >
+      <div className="grid gap-3">
+        {section.prose.map((item) => (
+          <SortableRow key={item.id} id={item.id}>
+            {(handle) => <ProseCard item={item} handle={handle} />}
+          </SortableRow>
+        ))}
+      </div>
+    </SortableList>
+  );
+}
+
+function ProseCard({
+  item,
+  handle,
+}: {
+  item: Prose;
+  handle: React.ReactNode;
+}) {
+  const words = item.body.trim() ? item.body.trim().split(/\s+/).length : 0;
+
+  return (
+    <div className="rounded-lg border border-line bg-surface-2/60 px-3 py-3">
+      <div className="mb-2 flex items-center gap-2">
+        {handle}
+        <AutoField
+          value={item.label}
+          bold
+          placeholder="Name this version"
+          ariaLabel="Version name"
+          className="max-w-[260px]"
+          onSave={(label) => updateProse(item.id, { label })}
+        />
+        <span className="text-[12px] muted">
+          {words} {words === 1 ? "word" : "words"}
+        </span>
+        <div className="ml-auto">
+          <ConfirmButton onConfirm={() => deleteProse(item.id)} />
+        </div>
+      </div>
+      <AutoField
+        value={item.body}
+        multiline
+        rows={4}
+        placeholder="Two or three sentences on who you are and what you do."
+        ariaLabel="Summary text"
+        onSave={(body) => updateProse(item.id, { body })}
+      />
+      <p className="mt-1.5 text-[12px] muted">
+        Wrap text in **double asterisks** to bold it.
+      </p>
+    </div>
+  );
+}
+
 function SkillsBody({ section }: { section: LibrarySection }) {
   if (section.skillGroups.length === 0) {
     return (
@@ -558,9 +709,26 @@ function SkillGroupCard({ group }: { group: LibrarySkillGroup }) {
 
 /* ------------------------------------------------------------------ */
 
+/**
+ * The layout choice bundles kind and date format, because the combinations
+ * people actually want are few and naming them is clearer than two dropdowns.
+ */
+const SECTION_PRESETS: Array<{
+  id: string;
+  label: string;
+  kind: SectionKind;
+  dateMode: DateMode;
+}> = [
+  { id: "dated", label: "Dated records with bullets", kind: "entries", dateMode: "range" },
+  { id: "awarded", label: "Records with one date", kind: "entries", dateMode: "single" },
+  { id: "undated", label: "Records with no dates", kind: "entries", dateMode: "none" },
+  { id: "skills", label: "Inline skill lists", kind: "skills", dateMode: "range" },
+  { id: "prose", label: "A paragraph (summary)", kind: "prose", dateMode: "none" },
+];
+
 function AddSectionForm() {
   const [title, setTitle] = useState("");
-  const [kind, setKind] = useState<SectionKind>("entries");
+  const [preset, setPreset] = useState(SECTION_PRESETS[0].id);
   const [, startTransition] = useTransition();
 
   return (
@@ -570,15 +738,19 @@ function AddSectionForm() {
         e.preventDefault();
         if (!title.trim()) return;
         const next = title;
+        const chosen =
+          SECTION_PRESETS.find((p) => p.id === preset) ?? SECTION_PRESETS[0];
         setTitle("");
-        startTransition(() => void createSection(next, kind));
+        startTransition(() =>
+          void createSection(next, chosen.kind, chosen.dateMode),
+        );
       }}
     >
       <label className="grid flex-1 gap-1.5">
         <span className="text-[12.5px] muted">New section</span>
         <input
           className="field"
-          placeholder="Certifications, Publications, Awards…"
+          placeholder="Summary, Certifications, Awards…"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
         />
@@ -586,12 +758,15 @@ function AddSectionForm() {
       <label className="grid gap-1.5">
         <span className="text-[12.5px] muted">Layout</span>
         <select
-          className="field w-52"
-          value={kind}
-          onChange={(e) => setKind(e.target.value as SectionKind)}
+          className="field w-60"
+          value={preset}
+          onChange={(e) => setPreset(e.target.value)}
         >
-          <option value="entries">Dated records with bullets</option>
-          <option value="skills">Inline skill lists</option>
+          {SECTION_PRESETS.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.label}
+            </option>
+          ))}
         </select>
       </label>
       <button type="submit" className="btn btn-primary" disabled={!title.trim()}>

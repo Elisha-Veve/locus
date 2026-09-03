@@ -11,9 +11,11 @@ interface SeedEntry {
 }
 interface SeedSection {
   title: string;
-  kind: "entries" | "skills";
+  kind: "entries" | "skills" | "prose";
+  dateMode?: "range" | "single" | "none";
   entries?: SeedEntry[];
   skillGroups?: Array<{ label: string; skills: string[] }>;
+  prose?: Array<{ label: string; body: string }>;
 }
 
 /*
@@ -35,6 +37,20 @@ const PROFILE = {
 };
 
 const SECTIONS: SeedSection[] = [
+  {
+    title: "Summary",
+    kind: "prose",
+    prose: [
+      {
+        label: "Backend focus",
+        body: "Backend engineer of eight years, most of it on systems that move data between other systems. I like the unglamorous work — the batch job nobody wants to touch, the migration that has to happen without downtime — and I care about leaving things easier to change than I found them.",
+      },
+      {
+        label: "Broader / product",
+        body: "Engineer of eight years across backend and product work. Happiest close to the people using what I build, and comfortable owning something end to end: the schema, the API, the interface, and the on-call rotation that follows.",
+      },
+    ],
+  },
   {
     title: "Professional Experience",
     kind: "entries",
@@ -110,6 +126,38 @@ const SECTIONS: SeedSection[] = [
     ],
   },
   {
+    title: "Certifications",
+    kind: "entries",
+    dateMode: "single",
+    entries: [
+      {
+        org: "Certified Kubernetes Administrator",
+        role: "Cloud Native Computing Foundation",
+        start: "2024-04",
+        bullets: [],
+      },
+      {
+        org: "AWS Solutions Architect — Associate",
+        role: "Amazon Web Services",
+        start: "2022-08",
+        bullets: [],
+      },
+    ],
+  },
+  {
+    title: "Awards",
+    kind: "entries",
+    dateMode: "single",
+    entries: [
+      {
+        org: "Engineering Excellence Award",
+        role: "Northwind Logistics",
+        start: "2024-11",
+        bullets: [],
+      },
+    ],
+  },
+  {
     title: "Education and Qualifications",
     kind: "entries",
     entries: [
@@ -149,7 +197,10 @@ export function seedIfEmpty(): void {
   if (n > 0) return;
 
   const insertSection = conn.prepare(
-    "INSERT INTO section (title, kind, sort_order) VALUES (?, ?, ?)",
+    "INSERT INTO section (title, kind, date_mode, sort_order) VALUES (?, ?, ?, ?)",
+  );
+  const insertProse = conn.prepare(
+    "INSERT INTO prose (section_id, label, body, sort_order) VALUES (?, ?, ?, ?)",
   );
   const insertEntry = conn.prepare(
     `INSERT INTO entry (section_id, org, role, subtitle, location, start_date, end_date, sort_order)
@@ -175,7 +226,15 @@ export function seedIfEmpty(): void {
 
     SECTIONS.forEach((section, si) => {
       const sectionId = Number(
-        insertSection.run(section.title, section.kind, si).lastInsertRowid,
+        insertSection.run(
+          section.title,
+          section.kind,
+          section.dateMode ?? "range",
+          si,
+        ).lastInsertRowid,
+      );
+      section.prose?.forEach((item, pi) =>
+        insertProse.run(sectionId, item.label, item.body, pi),
       );
       section.entries?.forEach((entry, ei) => {
         const entryId = Number(

@@ -15,8 +15,13 @@ CREATE TABLE IF NOT EXISTS profile (
 CREATE TABLE IF NOT EXISTS section (
   id         INTEGER PRIMARY KEY AUTOINCREMENT,
   title      TEXT NOT NULL,
-  -- 'entries' renders org/role/date blocks with bullets; 'skills' renders grouped inline lists
-  kind       TEXT NOT NULL CHECK (kind IN ('entries','skills')) DEFAULT 'entries',
+  -- 'entries' renders org/role/date blocks with bullets
+  -- 'skills'  renders grouped inline lists
+  -- 'prose'   renders a paragraph, for a summary or profile
+  kind       TEXT NOT NULL CHECK (kind IN ('entries','skills','prose')) DEFAULT 'entries',
+  -- How an entries section prints its dates. Experience wants a range;
+  -- certifications and awards are earned on one date; referees have none.
+  date_mode  TEXT NOT NULL CHECK (date_mode IN ('range','single','none')) DEFAULT 'range',
   sort_order INTEGER NOT NULL DEFAULT 0,
   archived   INTEGER NOT NULL DEFAULT 0
 );
@@ -44,6 +49,18 @@ CREATE TABLE IF NOT EXISTS bullet (
   archived   INTEGER NOT NULL DEFAULT 0
 );
 CREATE INDEX IF NOT EXISTS idx_bullet_entry ON bullet(entry_id);
+
+-- A paragraph for a summary or profile. A section can hold several, so you can
+-- keep a few angles on the same career and pick one per application.
+CREATE TABLE IF NOT EXISTS prose (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  section_id INTEGER NOT NULL REFERENCES section(id) ON DELETE CASCADE,
+  label      TEXT NOT NULL DEFAULT '',   -- names the variant in the editor only
+  body       TEXT NOT NULL DEFAULT '',   -- what actually prints
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  archived   INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS idx_prose_section ON prose(section_id);
 
 -- Skills: "Languages: Java (Springboot), Scala, ..."  group = the label, skill = one item.
 CREATE TABLE IF NOT EXISTS skill_group (
@@ -104,6 +121,15 @@ CREATE TABLE IF NOT EXISTS cv_bullet (
   sort_order    INTEGER,
   override_text TEXT,   -- NULL = use the library wording
   PRIMARY KEY (cv_id, bullet_id)
+);
+
+CREATE TABLE IF NOT EXISTS cv_prose (
+  cv_id         INTEGER NOT NULL REFERENCES cv(id) ON DELETE CASCADE,
+  prose_id      INTEGER NOT NULL REFERENCES prose(id) ON DELETE CASCADE,
+  included      INTEGER,
+  sort_order    INTEGER,
+  override_text TEXT,   -- NULL = use the library wording
+  PRIMARY KEY (cv_id, prose_id)
 );
 
 CREATE TABLE IF NOT EXISTS cv_skill_group (

@@ -46,11 +46,17 @@ export function CvDocument({ doc }: { doc: RenderDoc }) {
 
 function SectionBlock({ section }: { section: RenderSection }) {
   return (
-    <section className="cv-section">
+    <section className="cv-section" data-dates={section.dateMode}>
       <h2 className="cv-section-title">{section.title}</h2>
 
       <div className="cv-section-body">
-        {section.kind === "skills"
+        {section.kind === "prose"
+          ? section.prose.map((text, i) => (
+              <p className="cv-prose" key={i}>
+                <RichText text={text} />
+              </p>
+            ))
+          : section.kind === "skills"
           ? section.skillGroups.map((group, i) => (
               <p className="cv-skill-group" key={i}>
                 <span className="dot">•</span>

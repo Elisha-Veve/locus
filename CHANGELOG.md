@@ -13,6 +13,33 @@ and versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html):
 Schema changes ship with a migration in `src/lib/db.ts`, which runs on startup;
 existing databases are upgraded in place.
 
+## [1.1.0] — 2026-09-03
+
+### Added
+
+- **Summary / profile sections.** A new prose section layout for a paragraph
+  rather than a list. A section can hold several versions of the same summary
+  — one angled at backend work, one at leadership — and each CV picks the one
+  that fits. They are alternatives, so a new CV starts with the first ticked
+  rather than all of them stacked. Summaries support per-CV tailoring and
+  `**bold**` the same way bullets do.
+- **Single-date and undated record sections**, so certifications, awards and
+  publications print one date instead of a range, and sections like referees
+  print none. Set per section from the library. A single date is held in the
+  start field, which keeps newest-first sorting working.
+- Sample data now includes Summary, Certifications and Awards sections.
+
+### Changed
+
+- The Slate style inverts role and employer only in dated-role sections. In a
+  certifications section the certificate is the headline, so those keep the
+  normal order.
+
+### Fixed
+
+- A record created but never filled in no longer puts an empty section heading
+  on the exported CV.
+
 ## [Unreleased]
 
 Nothing yet.
@@ -57,5 +84,6 @@ First release.
 - Data lives in `data/locus.db` and is gitignored. Back it up yourself.
 - Deleting a library record removes it from past CVs as well.
 
-[Unreleased]: https://github.com/Elisha-Veve/locus/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/Elisha-Veve/locus/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/Elisha-Veve/locus/releases/tag/v1.1.0
 [1.0.0]: https://github.com/Elisha-Veve/locus/releases/tag/v1.0.0

@@ -11,6 +11,7 @@ import type {
   Entry,
   Library,
   LibrarySection,
+  Prose,
   Profile,
   RenderDoc,
   Section,
@@ -62,11 +63,15 @@ export function getLibrary(): Library {
   const skills = conn
     .prepare("SELECT * FROM skill WHERE archived = 0 ORDER BY sort_order, id")
     .all() as Skill[];
+  const prose = conn
+    .prepare("SELECT * FROM prose WHERE archived = 0 ORDER BY sort_order, id")
+    .all() as Prose[];
 
   const bulletsByEntry = groupBy(bullets, (b) => b.entry_id);
   const skillsByGroup = groupBy(skills, (s) => s.group_id);
   const entriesBySection = groupBy(entries, (e) => e.section_id);
   const groupsBySection = groupBy(groups, (g) => g.section_id);
+  const proseBySection = groupBy(prose, (p) => p.section_id);
 
   const librarySections: LibrarySection[] = sections.map((s) => ({
     ...s,
@@ -78,6 +83,7 @@ export function getLibrary(): Library {
       ...g,
       skills: skillsByGroup.get(g.id) ?? [],
     })),
+    prose: proseBySection.get(s.id) ?? [],
   }));
 
   return { profile: getProfile(), sections: librarySections };
@@ -147,6 +153,15 @@ export function getBuilderCv(cvId: number): BuilderCv | null {
     }>,
     (r) => r.group_id,
   );
+  const ovProse = indexBy(
+    conn.prepare("SELECT * FROM cv_prose WHERE cv_id = ?").all(cvId) as Array<{
+      prose_id: number;
+      included: number | null;
+      sort_order: number | null;
+      override_text: string | null;
+    }>,
+    (r) => r.prose_id,
+  );
   const ovSkill = indexBy(
     conn.prepare("SELECT * FROM cv_skill WHERE cv_id = ?").all(cvId) as Array<{
       skill_id: number;
@@ -212,6 +227,23 @@ export function getBuilderCv(cvId: number): BuilderCv | null {
         })
         .sort(by((g) => g.cvOrder, (g) => g.id));
 
+      // Prose variants are alternatives, not a list: a section holding three
+      // angles on the same summary should start with one ticked, not all
+      // three stacked. Everything else defaults to included.
+      const prose = s.prose
+        .map((p, index) => {
+          const op = ovProse.get(p.id);
+          const overrideText = op?.override_text ?? null;
+          return {
+            ...p,
+            included: op?.included == null ? index === 0 : op.included === 1,
+            cvOrder: op?.sort_order ?? p.sort_order,
+            overrideText,
+            effectiveText: overrideText ?? p.body,
+          };
+        })
+        .sort(by((p) => p.cvOrder, (p) => p.id));
+
       return {
         ...s,
         included: o?.included == null ? true : o.included === 1,
@@ -219,6 +251,7 @@ export function getBuilderCv(cvId: number): BuilderCv | null {
         autoOrder,
         entries,
         skillGroups,
+        prose,
       };
     })
     .sort(by((s) => s.cvOrder, (s) => s.id));

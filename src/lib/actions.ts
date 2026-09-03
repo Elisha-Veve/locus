@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { db, nextOrder } from "./db";
 import { listExports, removeExport } from "./exports";
 import { touchCv } from "./queries";
-import type { Profile, SectionKind } from "./types";
+import type { DateMode, Profile, SectionKind } from "./types";
 
 /* ------------------------------------------------------------------ */
 /* Helpers                                                             */
@@ -86,20 +86,35 @@ export async function saveProfile(patch: Partial<Profile>) {
 /* Library: sections                                                   */
 /* ------------------------------------------------------------------ */
 
-export async function createSection(title: string, kind: SectionKind) {
+export async function createSection(
+  title: string,
+  kind: SectionKind,
+  dateMode: DateMode = "range",
+) {
   const row = db()
     .prepare("SELECT COALESCE(MAX(sort_order), -1) + 1 AS next FROM section")
     .get() as { next: number };
   const id = db()
-    .prepare("INSERT INTO section (title, kind, sort_order) VALUES (?, ?, ?)")
-    .run(title.trim() || "Untitled section", kind, row.next).lastInsertRowid;
+    .prepare(
+      "INSERT INTO section (title, kind, date_mode, sort_order) VALUES (?, ?, ?, ?)",
+    )
+    .run(title.trim() || "Untitled section", kind, dateMode, row.next)
+    .lastInsertRowid;
   refreshLibrary();
   return Number(id);
 }
 
-export async function updateSection(id: number, patch: { title?: string }) {
+export async function updateSection(
+  id: number,
+  patch: { title?: string; date_mode?: DateMode },
+) {
   if (patch.title !== undefined) {
     db().prepare("UPDATE section SET title = ? WHERE id = ?").run(patch.title, id);
+  }
+  if (patch.date_mode !== undefined) {
+    db()
+      .prepare("UPDATE section SET date_mode = ? WHERE id = ?")
+      .run(patch.date_mode, id);
   }
   refreshLibrary();
 }
@@ -179,6 +194,44 @@ export async function deleteBullet(id: number) {
 
 export async function reorderBullets(ids: number[]) {
   persistLibraryOrder("bullet", ids);
+  refreshLibrary();
+}
+
+/* ------------------------------------------------------------------ */
+/* Library: prose                                                      */
+/* ------------------------------------------------------------------ */
+
+export async function createProse(sectionId: number, label = "New version") {
+  const id = db()
+    .prepare(
+      "INSERT INTO prose (section_id, label, sort_order) VALUES (?, ?, ?)",
+    )
+    .run(sectionId, label, nextOrder("prose", "section_id", sectionId))
+    .lastInsertRowid;
+  refreshLibrary();
+  return Number(id);
+}
+
+export async function updateProse(
+  id: number,
+  patch: Partial<{ label: string; body: string }>,
+) {
+  const keys = Object.keys(patch) as Array<keyof typeof patch>;
+  if (keys.length === 0) return;
+  const set = keys.map((k) => `${k} = ?`).join(", ");
+  db()
+    .prepare(`UPDATE prose SET ${set} WHERE id = ?`)
+    .run(...keys.map((k) => patch[k]), id);
+  refreshLibrary();
+}
+
+export async function deleteProse(id: number) {
+  db().prepare("DELETE FROM prose WHERE id = ?").run(id);
+  refreshLibrary();
+}
+
+export async function reorderProse(ids: number[]) {
+  persistLibraryOrder("prose", ids);
   refreshLibrary();
 }
 
@@ -300,6 +353,7 @@ export async function duplicateCv(cvId: number, name: string) {
       ["cv_bullet", "bullet_id, included, sort_order, override_text"],
       ["cv_skill_group", "group_id, included, sort_order"],
       ["cv_skill", "skill_id, included, sort_order"],
+      ["cv_prose", "prose_id, included, sort_order, override_text"],
     ] as const) {
       conn
         .prepare(
@@ -413,6 +467,32 @@ export async function setBulletOverride(
   refreshCv(cvId);
 }
 
+export async function setProseIncluded(
+  cvId: number,
+  proseId: number,
+  included: boolean,
+) {
+  upsertOverlay("cv_prose", "prose_id", cvId, proseId, {
+    included: included ? 1 : 0,
+  });
+  refreshCv(cvId);
+}
+
+/** null clears the override and falls back to the library wording. */
+export async function setProseOverride(
+  cvId: number,
+  proseId: number,
+  text: string | null,
+) {
+  upsertOverlay("cv_prose", "prose_id", cvId, proseId, { override_text: text });
+  refreshCv(cvId);
+}
+
+export async function reorderCvProse(cvId: number, ids: number[]) {
+  persistOverlayOrder("cv_prose", "prose_id", cvId, ids);
+  refreshCv(cvId);
+}
+
 export async function setSkillGroupIncluded(
   cvId: number,
   groupId: number,
@@ -473,6 +553,12 @@ export async function setSectionSelectionBulk(
       for (const s of skills) {
         upsertOverlay("cv_skill", "skill_id", cvId, s.id, { included: flag });
       }
+    }
+    const paragraphs = conn
+      .prepare("SELECT id FROM prose WHERE section_id = ? AND archived = 0")
+      .all(sectionId) as Array<{ id: number }>;
+    for (const { id } of paragraphs) {
+      upsertOverlay("cv_prose", "prose_id", cvId, id, { included: flag });
     }
   })();
   refreshCv(cvId);

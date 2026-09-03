@@ -85,21 +85,38 @@ white in every palette, and the export is identical whichever theme you use.
 
 ![The library](docs/screenshots/library.png)
 
-Sections come in two layouts: dated records with bullets, and inline skill
-lists. You can add your own sections. Wrap text in `**double asterisks**` to
-bold it inside a bullet.
+Add your own sections in any of the layouts described below — a summary,
+certifications, awards, publications, referees. Wrap text in
+`**double asterisks**` to bold it inside a bullet or a summary.
 
 ## How it fits together
 
 A CV is a *selection over* the library, not a copy:
 
 ```
-section  (Professional Experience, Projects, Skills, …)
+section  (Summary, Professional Experience, Certifications, Skills, …)
 ├── entry        (Northwind Logistics — Senior Backend Engineer)
 │   └── bullet
-└── skill_group  (Languages)
-    └── skill
+├── skill_group  (Languages)
+│   └── skill
+└── prose        (one version of your summary)
 ```
+
+Sections come in three layouts:
+
+| Layout | For | Prints as |
+| --- | --- | --- |
+| **Dated records with bullets** | Experience, Education, Projects | Organisation, role, date range, bullets |
+| **Records with one date** | Certifications, Awards, Publications | The same, with a single date instead of a range |
+| **Records with no dates** | Referees, Interests | The same, with no date at all |
+| **Inline skill lists** | Skills, Languages, Tools | `Languages: Go, TypeScript, …` |
+| **A paragraph** | Summary, Profile, Objective | A block of prose |
+
+A prose section can hold **several versions of the same paragraph** — one
+angled at backend work, one at leadership — and each CV picks the one that
+fits. They are alternatives, so a new CV starts with the first ticked rather
+than all of them stacked. Like bullets, a summary can be tailored for one
+application without touching the library copy.
 
 The `cv_*` tables store only where a CV **deviates** from the default — a
 missing row means "included, in library order". Two consequences worth knowing:

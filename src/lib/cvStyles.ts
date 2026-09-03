@@ -141,6 +141,10 @@ export const cvStyles = `
 .cv-bullet + .cv-bullet { margin-top: var(--cv-gap-bullet); }
 .cv-bullet .dot { margin-right: 4pt; }
 
+/* Prose: a summary or profile paragraph. */
+.cv-prose { margin: 0; line-height: var(--cv-lead); text-align: justify; }
+.cv-prose + .cv-prose { margin-top: var(--cv-gap-bullet); }
+
 .cv-skill-group { line-height: var(--cv-lead); }
 .cv-skill-group + .cv-skill-group { margin-top: var(--cv-gap-bullet); }
 .cv-skill-group .dot { margin-right: 4pt; }
@@ -281,6 +285,7 @@ export const cvStyles = `
   padding-bottom: 0;
   margin-bottom: 1pt;
 }
+.cv-page[data-style="margin"] .cv-prose { text-align: left; }
 .cv-page[data-style="margin"] .cv-entry-dates { font-weight: 400; }
 /* The text column is narrower here, so bullets hang rather than wrapping
    flush — otherwise the wrapped lines run together with the markers. */
@@ -368,6 +373,7 @@ export const cvStyles = `
   justify-content: flex-start;
   gap: 0;
 }
+.cv-page[data-style="open"] .cv-prose { text-align: left; }
 .cv-page[data-style="open"] .cv-entry-org { text-transform: uppercase; }
 .cv-page[data-style="open"] .cv-entry-role::before {
   content: "|";
@@ -438,18 +444,23 @@ export const cvStyles = `
   padding-bottom: 0;
   margin-bottom: 2pt;
 }
-.cv-page[data-style="slate"] .cv-entry-title {
+/* The inversion only makes sense where the role is the headline — a dated job.
+   In a certifications or awards section the award itself is the headline and
+   lives in the organisation field, so those keep the normal order. */
+.cv-page[data-style="slate"] .cv-section[data-dates="range"] .cv-entry-title {
   display: flex;
   flex-direction: column-reverse;
   min-width: 0;
 }
-.cv-page[data-style="slate"] .cv-entry-role {
+.cv-page[data-style="slate"] .cv-section[data-dates="range"] .cv-entry-role {
   font-size: 10.5pt;
   font-weight: 400;
   line-height: 1.25;
 }
-.cv-page[data-style="slate"] .cv-entry-role::before { content: none; }
-.cv-page[data-style="slate"] .cv-entry-org {
+.cv-page[data-style="slate"] .cv-section[data-dates="range"] .cv-entry-role::before {
+  content: none;
+}
+.cv-page[data-style="slate"] .cv-section[data-dates="range"] .cv-entry-org {
   font-size: 8.8pt;
   font-weight: 700;
 }

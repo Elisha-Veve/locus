@@ -5,11 +5,14 @@ import { useCallback, useMemo, useState, useTransition } from "react";
 import {
   reorderCvBullets,
   reorderCvEntries,
+  reorderCvProse,
   reorderCvSections,
   reorderCvSkills,
   setAutoOrder,
   setBulletIncluded,
   setBulletOverride,
+  setProseIncluded,
+  setProseOverride,
   setEntryIncluded,
   setSectionIncluded,
   setSectionSelectionBulk,
@@ -31,6 +34,7 @@ import { resolveCv } from "@/lib/resolve";
 import type {
   BuilderCv,
   BuilderEntry,
+  BuilderProse,
   BuilderSection,
   BuilderSkillGroup,
   ExportSummary,
@@ -282,7 +286,9 @@ function SectionPanel({
   const children =
     section.kind === "skills"
       ? section.skillGroups.flatMap((g) => g.skills)
-      : section.entries;
+      : section.kind === "prose"
+        ? section.prose
+        : section.entries;
   const chosen = children.filter((c) => c.included).length;
   const partial = chosen > 0 && chosen < children.length;
 
@@ -308,6 +314,7 @@ function SectionPanel({
             included,
             skills: g.skills.map((sk) => ({ ...sk, included })),
           })),
+          prose: s.prose.map((p) => ({ ...p, included })),
         })),
       () => setSectionSelectionBulk(cvId, section.id, included),
     );
@@ -357,7 +364,9 @@ function SectionPanel({
 
       {open && (
         <div className="px-3.5 py-3">
-          {section.kind === "skills" ? (
+          {section.kind === "prose" ? (
+            <ProseList cvId={cvId} section={section} apply={apply} />
+          ) : section.kind === "skills" ? (
             <div className="grid gap-3">
               {section.skillGroups.map((group) => (
                 <SkillGroupPanel
@@ -626,6 +635,165 @@ function BulletRow({
             placeholder="Reword this bullet for this application only"
             ariaLabel="Tailored bullet text"
             onSave={(text) => onOverride(text === bullet.text ? null : text)}
+          />
+          <div className="mt-1.5 flex items-center gap-2">
+            <span className="text-[12px] muted">
+              Only affects this CV — the library keeps its own wording.
+            </span>
+            {overridden && (
+              <button
+                type="button"
+                className="btn btn-ghost btn-sm ml-auto"
+                onClick={() => {
+                  onOverride(null);
+                  setEditing(false);
+                }}
+              >
+                Reset to library
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Prose                                                               */
+/* ------------------------------------------------------------------ */
+
+/** Pick which version of the summary this application gets. */
+function ProseList({
+  cvId,
+  section,
+  apply,
+}: {
+  cvId: number;
+  section: BuilderSection;
+  apply: (updater: Updater, persist: () => Promise<unknown>) => void;
+}) {
+  if (section.prose.length === 0) return <EmptyHint />;
+
+  const mapProse = (
+    draft: BuilderCv,
+    id: number,
+    fn: (p: BuilderProse) => BuilderProse,
+  ): BuilderCv =>
+    mapSection(draft, section.id, (s) => ({
+      ...s,
+      prose: s.prose.map((p) => (p.id === id ? fn(p) : p)),
+    }));
+
+  return (
+    <SortableList
+      ids={section.prose.map((p) => p.id)}
+      onReorder={(next) =>
+        apply(
+          (draft) =>
+            mapSection(draft, section.id, (s) => ({
+              ...s,
+              prose: reorderBy(s.prose, next),
+            })),
+          () => reorderCvProse(cvId, next),
+        )
+      }
+    >
+      <div className="grid gap-2">
+        {section.prose.map((item) => (
+          <SortableRow key={item.id} id={item.id}>
+            {(handle) => (
+              <ProseRow
+                item={item}
+                handle={handle}
+                onToggle={(included) =>
+                  apply(
+                    (draft) => mapProse(draft, item.id, (p) => ({ ...p, included })),
+                    () => setProseIncluded(cvId, item.id, included),
+                  )
+                }
+                onOverride={(text) =>
+                  apply(
+                    (draft) =>
+                      mapProse(draft, item.id, (p) => ({
+                        ...p,
+                        overrideText: text,
+                        effectiveText: text ?? p.body,
+                      })),
+                    () => setProseOverride(cvId, item.id, text),
+                  )
+                }
+              />
+            )}
+          </SortableRow>
+        ))}
+      </div>
+    </SortableList>
+  );
+}
+
+function ProseRow({
+  item,
+  handle,
+  onToggle,
+  onOverride,
+}: {
+  item: BuilderProse;
+  handle: React.ReactNode;
+  onToggle: (included: boolean) => void;
+  onOverride: (text: string | null) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const overridden = item.overrideText !== null;
+
+  return (
+    <div
+      className={`rounded-lg border border-line bg-surface-2/60 px-2.5 py-2 ${
+        item.included ? "" : "dimmed"
+      }`}
+    >
+      <div className="flex items-start gap-2.5">
+        <span className="pt-[3px]">{handle}</span>
+        <span className="pt-[1px]">
+          <Checkbox
+            checked={item.included}
+            ariaLabel={`Include ${item.label || "summary"}`}
+            onChange={onToggle}
+          />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-[13px] font-medium">
+            {item.label || "Untitled version"}
+            {overridden && (
+              <span className="ml-1.5 rounded bg-accent-soft px-1.5 py-px text-[11px] font-medium text-accent">
+                edited
+              </span>
+            )}
+          </p>
+          <p className="mt-0.5 text-[13px] leading-[1.45] text-ink-2">
+            {item.effectiveText || (
+              <span className="italic muted">Empty — write it in the library</span>
+            )}
+          </p>
+        </div>
+        <button
+          type="button"
+          className="btn btn-ghost btn-sm flex-none"
+          onClick={() => setEditing((v) => !v)}
+        >
+          {editing ? "Done" : "Tailor"}
+        </button>
+      </div>
+
+      {editing && (
+        <div className="mt-1.5 pl-[52px]">
+          <AutoField
+            value={item.effectiveText}
+            multiline
+            rows={4}
+            placeholder="Reword this summary for this application only"
+            ariaLabel="Tailored summary text"
+            onSave={(text) => onOverride(text === item.body ? null : text)}
           />
           <div className="mt-1.5 flex items-center gap-2">
             <span className="text-[12px] muted">
