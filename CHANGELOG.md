@@ -35,6 +35,26 @@ same schema.
   dates, wrong-typed collections and oversized fields, with no key or network
   needed. CI runs it.
 
+- **Anthropic, OpenAI and Groq** as providers, chosen in Settings. Groq's free
+  tier is the easiest place to start.
+
+- **The model is configurable.** Each provider ships a default, and
+  `LOCUS_AI_<PROVIDER>_MODEL` — or the field in Settings — overrides it. Which
+  models an account can actually reach is not knowable in advance: they are
+  retired, renamed and gated by tier, and two shipped defaults were wrong in a
+  single afternoon. A 404 is now a ten-second fix rather than a release.
+
+- **A workspace id for Anthropic identity-linked keys**, which must say which
+  workspace a request acts in. Ordinary keys need nothing and the header is
+  omitted.
+
+### Fixed
+
+- A failed provider call reported only its status code. The body carries the
+  provider's own explanation — it does not echo the key — and withholding it
+  turned a wrong model id into an unexplained 400. The message is passed
+  through, trimmed, for every provider shape and for replies that are not JSON.
+
 - CI on every pull request and push to `main` — typecheck, build and the
   migration check, on Node 22.18 and 24. Closes #4.
 - A contributor workflow in `CONTRIBUTING.md`, `CODEOWNERS` to route reviews,
