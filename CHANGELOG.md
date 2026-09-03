@@ -33,6 +33,11 @@ same schema.
 
 ### Fixed
 
+- Upgraded better-sqlite3 from 11.10 to 13.0.3. The 11.x native addon aborts
+  on Node 24 under Linux when a prepared statement is finalised —
+  `RemoveEnvironmentCleanupHook: Assertion failed: (env) != nullptr` — which is
+  the signature of an addon built against an older Node ABI. Only stable core
+  APIs are used here, and the database file format is unchanged.
 - `npm run check:migrations` could abort the process on exit. It opened
   databases and never closed them, leaving better-sqlite3 to finalise
   statements in a native destructor after Node had torn down the environment —
