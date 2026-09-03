@@ -1,12 +1,16 @@
 import Link from "next/link";
 import { getLibrary } from "@/lib/queries";
-import { seedIfEmpty } from "@/lib/seed";
+import { libraryIsEmpty, seedIfEmpty } from "@/lib/seed";
+import { EmptyLibrary } from "./empty-library";
 import { LibraryEditor } from "./library-client";
 
 export const dynamic = "force-dynamic";
 
 export default function LibraryPage() {
-  seedIfEmpty();
+  // The demo database exists to be full — the screenshots are taken from it.
+  if (process.env.LOCUS_SEED === "1") seedIfEmpty();
+
+  const empty = libraryIsEmpty();
   const library = getLibrary();
 
   return (
@@ -23,6 +27,7 @@ export default function LibraryPage() {
           Read a CV
         </Link>
       </div>
+      {empty && <EmptyLibrary />}
       <LibraryEditor library={library} />
     </main>
   );

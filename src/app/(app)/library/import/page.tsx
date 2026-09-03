@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getAiCapabilities } from "@/lib/ai";
+import { weighLibrary } from "@/lib/import/commit";
 import { ImportClient } from "./import-client";
 
 export const dynamic = "force-dynamic";
@@ -7,6 +8,8 @@ export const dynamic = "force-dynamic";
 export default function ImportPage() {
   // Read on the server: whether a key exists is an environment question.
   const capabilities = getAiCapabilities();
+  // Read here so the review screen can say exactly what replacing would cost.
+  const existing = weighLibrary();
 
   return (
     <main className="mx-auto max-w-[900px] px-6 py-10">
@@ -23,7 +26,11 @@ export default function ImportPage() {
         </p>
       </div>
 
-      <ImportClient level={capabilities.level} provider={capabilities.provider?.label ?? null} />
+      <ImportClient
+        level={capabilities.level}
+        provider={capabilities.provider?.label ?? null}
+        existing={existing}
+      />
     </main>
   );
 }

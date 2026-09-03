@@ -83,6 +83,12 @@ A smaller model reads a CV more roughly. That costs less than it sounds: the
 offline reader still does the structural work, and you review everything before
 any of it is saved.
 
+## Reading a PDF
+
+Nothing to install — PDF reading is bundled. A PDF that is a scan (an image of
+a page rather than text) has no text to read, and Locus says so; paste the text
+instead.
+
 ## If something else goes wrong
 
 Locus reports what the provider said rather than just a status code, so the

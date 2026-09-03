@@ -188,7 +188,22 @@ const SECTIONS: SeedSection[] = [
   },
 ];
 
-/** Populate an empty database with the sample. No-op if anything exists. */
+/** True when the library has nothing in it yet. */
+export function libraryIsEmpty(): boolean {
+  const { n } = db()
+    .prepare("SELECT COUNT(*) AS n FROM section")
+    .get() as { n: number };
+  return n === 0;
+}
+
+/**
+ * Put the sample in an empty database.
+ *
+ * This used to run on every page load, so a new database quietly filled with
+ * a stranger's invented career and the first job was deleting it. It is now
+ * only called when someone asks for it, or for the demo database that the
+ * screenshots are taken from, where sample data is the entire point.
+ */
 export function seedIfEmpty(): void {
   const conn = db();
   const { n } = conn.prepare("SELECT COUNT(*) AS n FROM section").get() as {

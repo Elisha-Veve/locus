@@ -17,6 +17,17 @@ import { sectionIsEmpty } from "./types.ts";
  * and undoable by hand.
  */
 
+/** What replacing would destroy, so it can be said before it happens. */
+export interface LibraryWeight {
+  sections: number;
+  entries: number;
+  bullets: number;
+  skills: number;
+  prose: number;
+  /** CVs whose selections are made of these records. */
+  cvs: number;
+}
+
 export interface ImportSummary {
   sections: number;
   entries: number;
@@ -25,16 +36,32 @@ export interface ImportSummary {
   skills: number;
   prose: number;
   profileUpdated: boolean;
+  /** True when the library was emptied first. */
+  replaced: boolean;
+}
+
+/** How much is in the library now, and how many CVs are built on it. */
+export function weighLibrary(): LibraryWeight {
+  const conn = db();
+  const count = (sql: string) => (conn.prepare(sql).get() as { n: number }).n;
+  return {
+    sections: count("SELECT COUNT(*) AS n FROM section"),
+    entries: count("SELECT COUNT(*) AS n FROM entry"),
+    bullets: count("SELECT COUNT(*) AS n FROM bullet"),
+    skills: count("SELECT COUNT(*) AS n FROM skill"),
+    prose: count("SELECT COUNT(*) AS n FROM prose"),
+    cvs: count("SELECT COUNT(*) AS n FROM cv"),
+  };
 }
 
 export function commitImport(
   cv: ImportedCv,
-  options: { applyProfile: boolean },
+  options: { applyProfile: boolean; replace?: boolean },
 ): ImportSummary {
   const conn = db();
   const summary: ImportSummary = {
     sections: 0, entries: 0, bullets: 0, groups: 0, skills: 0, prose: 0,
-    profileUpdated: false,
+    profileUpdated: false, replaced: false,
   };
 
   const insertSection = conn.prepare(
@@ -58,6 +85,16 @@ export function commitImport(
   );
 
   const apply = conn.transaction(() => {
+    if (options.replace) {
+      // Deleting sections cascades through entry, bullet, prose, skill_group
+      // and skill, and through every cv_* overlay built on them — so existing
+      // CVs survive as records but lose their selections. Saved exports are
+      // untouched: those hold their own snapshot, so an old PDF stays true.
+      // Inside the transaction, so a failure leaves the library as it was.
+      conn.prepare("DELETE FROM section").run();
+      summary.replaced = true;
+    }
+
     if (options.applyProfile) {
       // Only fill blanks. An import must not overwrite details already there.
       const current = conn

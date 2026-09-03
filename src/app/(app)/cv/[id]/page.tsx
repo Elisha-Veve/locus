@@ -2,7 +2,6 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { listExports } from "@/lib/exports";
 import { getBuilderCv } from "@/lib/queries";
-import { seedIfEmpty } from "@/lib/seed";
 import { Builder } from "./builder-client";
 
 export const dynamic = "force-dynamic";
@@ -12,7 +11,6 @@ export default async function CvPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  seedIfEmpty();
   const { id } = await params;
   const builder = getBuilderCv(Number(id));
   if (!builder) notFound();

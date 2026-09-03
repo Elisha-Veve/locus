@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev -p 3210",
-    "dev:demo": "LOCUS_DB=data/demo.db next dev -p 3211",
+    "dev:demo": "LOCUS_DB=data/demo.db LOCUS_SEED=1 next dev -p 3211",
     "screenshots": "node scripts/screenshots.mjs",
     "check:migrations": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-migrations.mts",
     "check:import": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-import.mts",

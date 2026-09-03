@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { getCv, getRenderDoc } from "@/lib/queries";
 import { renderCvPdf } from "@/lib/pdf";
 import { recordExport } from "@/lib/exports";
-import { seedIfEmpty } from "@/lib/seed";
 
 function fileName(cvName: string, personName: string): string {
   const base = [personName, cvName].filter(Boolean).join(" - ") || "CV";
@@ -13,7 +12,6 @@ export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  seedIfEmpty();
   const { id } = await params;
   const cvId = Number(id);
   const cv = getCv(cvId);

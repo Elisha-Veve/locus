@@ -35,6 +35,20 @@ same schema.
   dates, wrong-typed collections and oversized fields, with no key or network
   needed. CI runs it.
 
+- **A new library offers a choice instead of filling itself in.** Locus used to
+  seed a fictional CV on first load, so an empty database quietly became
+  somebody else's invented career and the first job was deleting it. An empty
+  library now offers to read a CV you already have, or to take the sample
+  deliberately, or to be left alone while you add sections by hand. The demo
+  database still seeds itself — sample data is the whole point of it.
+
+- **An import can replace the library rather than add to it.** Appending stays
+  the default. Replacing states exactly what it will delete, with counts, and
+  is refused until confirmed. It also says the part that is easy to miss: CVs
+  survive but lose their selections, because those point at the records being
+  deleted. Anything already downloaded is untouched, since a saved version
+  keeps its own copy of what it said.
+
 - **PDFs are read without installing anything.** Choosing a PDF used to need
   `pdftotext` from poppler — a system dependency, so for most people the option
   was there and quietly did not work. A bundled reader replaces it; `npm

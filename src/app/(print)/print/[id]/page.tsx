@@ -2,7 +2,6 @@ import { notFound } from "next/navigation";
 import { CvDocument } from "@/components/CvDocument";
 import { cvStyles } from "@/lib/cvStyles";
 import { getRenderDoc } from "@/lib/queries";
-import { seedIfEmpty } from "@/lib/seed";
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +15,6 @@ export default async function PrintPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  seedIfEmpty();
   const { id } = await params;
   const doc = getRenderDoc(Number(id));
   if (!doc) notFound();
