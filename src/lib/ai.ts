@@ -57,7 +57,9 @@ export const AI_PROVIDERS: AiProviderInfo[] = [
     envVar: "LOCUS_AI_ANTHROPIC",
     keysUrl: "https://console.anthropic.com/settings/keys",
     endpoint: "https://api.anthropic.com/v1/messages",
-    model: "claude-haiku-4-5-20251001",
+    // The id is complete as written — model ids carry no date suffix, and an
+    // invented one is a 400 rather than a helpful "no such model".
+    model: "claude-haiku-4-5",
   },
   {
     id: "openai",
@@ -195,6 +197,29 @@ function buildRequest(
   };
 }
 
+/**
+ * What the provider said went wrong.
+ *
+ * An earlier version reported only the status code, on the theory that a body
+ * might echo the request. It does not echo the key — providers return a
+ * description, and withholding it made a wrong model id look like an
+ * unexplained 400. The message is what turns a failure into a fix, so it is
+ * passed through, trimmed.
+ */
+async function explain(response: Response): Promise<string> {
+  try {
+    const body = (await response.json()) as Record<string, unknown>;
+    const error = body.error as { message?: string } | undefined;
+    const message = error?.message ?? (body.message as string | undefined);
+    if (typeof message === "string" && message.trim()) {
+      return message.trim().slice(0, 300);
+    }
+  } catch {
+    // Not JSON, or already consumed — the status alone will have to do.
+  }
+  return response.statusText || "No explanation was given.";
+}
+
 function readReply(provider: AiProviderInfo, payload: unknown): string {
   const data = payload as Record<string, unknown>;
   if (provider.id === "anthropic") {
@@ -235,12 +260,11 @@ export function getAiClient(need: AiRequirement): AiClient | null {
     provider,
     fetch: send,
     async complete(prompt, opts) {
-      const { url, body } = buildRequest(provider, prompt, opts?.maxTokens ?? 4096);
+      const { url, body } = buildRequest(provider, prompt, opts?.maxTokens ?? 16000);
       const response = await send(url, { method: "POST", body });
       if (!response.ok) {
-        // The body can echo the request, so report the status only.
         throw new Error(
-          `${provider.label} returned ${response.status} ${response.statusText}.`,
+          `${provider.label} returned ${response.status}. ${await explain(response)}`,
         );
       }
       return readReply(provider, await response.json());
