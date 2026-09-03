@@ -22,6 +22,10 @@ export interface AiProviderInfo {
   envVar: string;
   /** Where to get a key. */
   keysUrl: string;
+  /** Chat completions endpoint. */
+  endpoint: string;
+  /** The small model these one-shot jobs use — cheap enough for a free tier. */
+  model: string;
 }
 
 /** What the app can actually do right now. */

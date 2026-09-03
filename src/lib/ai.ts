@@ -56,12 +56,16 @@ export const AI_PROVIDERS: AiProviderInfo[] = [
     label: "Anthropic",
     envVar: "LOCUS_AI_ANTHROPIC",
     keysUrl: "https://console.anthropic.com/settings/keys",
+    endpoint: "https://api.anthropic.com/v1/messages",
+    model: "claude-haiku-4-5-20251001",
   },
   {
     id: "openai",
     label: "OpenAI",
     envVar: "LOCUS_AI_OPENAI",
     keysUrl: "https://platform.openai.com/api-keys",
+    endpoint: "https://api.openai.com/v1/chat/completions",
+    model: "gpt-4o-mini",
   },
 ];
 
@@ -153,6 +157,52 @@ export interface AiClient {
    * returned anywhere, so a caller cannot route it somewhere else.
    */
   fetch: (url: string, init?: RequestInit) => Promise<Response>;
+  /**
+   * One prompt in, the model's text out. Providers disagree about request and
+   * response shape and about nothing else that matters here, so that
+   * disagreement is settled once rather than in every feature.
+   *
+   * Throws on a transport error or a non-2xx reply. Callers are expected to
+   * catch and fall back — no feature should break because a provider is
+   * having a bad afternoon.
+   */
+  complete: (prompt: string, opts?: { maxTokens?: number }) => Promise<string>;
+}
+
+/** The small models these features are sized for. Cheap enough for a free tier. */
+function buildRequest(
+  provider: AiProviderInfo,
+  prompt: string,
+  maxTokens: number,
+): { url: string; body: string } {
+  if (provider.id === "anthropic") {
+    return {
+      url: provider.endpoint,
+      body: JSON.stringify({
+        model: provider.model,
+        max_tokens: maxTokens,
+        messages: [{ role: "user", content: prompt }],
+      }),
+    };
+  }
+  return {
+    url: provider.endpoint,
+    body: JSON.stringify({
+      model: provider.model,
+      max_completion_tokens: maxTokens,
+      messages: [{ role: "user", content: prompt }],
+    }),
+  };
+}
+
+function readReply(provider: AiProviderInfo, payload: unknown): string {
+  const data = payload as Record<string, unknown>;
+  if (provider.id === "anthropic") {
+    const content = data.content as Array<{ type: string; text?: string }> | undefined;
+    return (content ?? []).filter((c) => c.type === "text").map((c) => c.text ?? "").join("");
+  }
+  const choices = data.choices as Array<{ message?: { content?: string } }> | undefined;
+  return choices?.[0]?.message?.content ?? "";
 }
 
 /**
@@ -171,16 +221,29 @@ export function getAiClient(need: AiRequirement): AiClient | null {
   const auth = AUTH_HEADERS[provider.id];
   if (!auth) return null;
 
+  const send: AiClient["fetch"] = (url, init) =>
+    fetch(url, {
+      ...init,
+      headers: {
+        "content-type": "application/json",
+        ...auth(key),
+        ...(init?.headers ?? {}),
+      },
+    });
+
   return {
     provider,
-    fetch: (url, init) =>
-      fetch(url, {
-        ...init,
-        headers: {
-          "content-type": "application/json",
-          ...auth(key),
-          ...(init?.headers ?? {}),
-        },
-      }),
+    fetch: send,
+    async complete(prompt, opts) {
+      const { url, body } = buildRequest(provider, prompt, opts?.maxTokens ?? 4096);
+      const response = await send(url, { method: "POST", body });
+      if (!response.ok) {
+        // The body can echo the request, so report the status only.
+        throw new Error(
+          `${provider.label} returned ${response.status} ${response.statusText}.`,
+        );
+      }
+      return readReply(provider, await response.json());
+    },
   };
 }

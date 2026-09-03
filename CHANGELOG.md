@@ -19,6 +19,22 @@ same schema.
 
 ### Added
 
+- **Read a CV into the library.** Paste one, or choose a PDF, and Locus turns
+  it into sections, records, bullets and skills for you to check before any of
+  it is saved. Nothing is written until you say so, and every section, record
+  and individual bullet can be edited or unticked first.
+
+  It works with no key at all: the offline reader uses layout alone and handles
+  the usual shapes — dates on their own line, `Label: a, b, c` skill groups,
+  single-date certifications. At the `assisted` level a provider is asked to
+  improve that reading, and if the call fails or returns something malformed
+  the offline reading is used instead and you are told.
+
+  Nothing a model returns is trusted structurally. `npm run check:import` runs
+  36 checks over the parser and the coercion barrier, including malformed
+  dates, wrong-typed collections and oversized fields, with no key or network
+  needed. CI runs it.
+
 - CI on every pull request and push to `main` — typecheck, build and the
   migration check, on Node 22.18 and 24. Closes #4.
 - A contributor workflow in `CONTRIBUTING.md`, `CODEOWNERS` to route reviews,

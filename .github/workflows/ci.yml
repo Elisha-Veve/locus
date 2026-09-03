@@ -51,5 +51,8 @@ jobs:
       - name: Migrations agree with the schema
         run: npm run check:migrations
 
+      - name: Reading a CV still works
+        run: npm run check:import
+
       - name: Build
         run: npm run build
