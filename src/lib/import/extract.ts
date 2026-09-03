@@ -1,19 +1,13 @@
-import { execFile } from "node:child_process";
-import fs from "node:fs";
-import os from "node:os";
-import path from "node:path";
-import { promisify } from "node:util";
-
-const run = promisify(execFile);
+import { pdfToText } from "./pdfText.ts";
 
 /**
  * Get text out of an uploaded CV.
  *
- * PDF goes through `pdftotext -layout` when poppler is installed. That is a
- * system dependency rather than an npm one, so it is treated as a convenience:
- * when it is missing we say so plainly and point at pasting the text, which
- * needs nothing and works everywhere. Adding a JavaScript PDF engine to the
- * bundle to save one paste is not a trade worth making yet.
+ * PDF reading is bundled — `npm install` is the whole setup. It used to shell
+ * out to `pdftotext`, which is a system dependency most people do not have, so
+ * the feature quietly did not work for them. There is now one code path rather
+ * than two, which also means a parse that goes wrong goes wrong the same way
+ * for everyone rather than depending on what is installed.
  *
  * Server-side only.
  */
@@ -22,15 +16,6 @@ export interface ExtractResult {
   text: string;
   /** Told to the person when extraction could not be done for them. */
   problem?: string;
-}
-
-async function havePdftotext(): Promise<boolean> {
-  try {
-    await run("pdftotext", ["-v"]);
-    return true;
-  } catch {
-    return false;
-  }
 }
 
 export async function extractText(
@@ -54,36 +39,23 @@ export async function extractText(
     return { text };
   }
 
-  if (!(await havePdftotext())) {
-    return {
-      text: "",
-      problem:
-        "Reading PDFs needs `pdftotext`, which is not installed (it comes with poppler: `brew install poppler`, or `apt install poppler-utils`). Until then, open the PDF, copy the text, and paste it below.",
-    };
-  }
-
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "locus-import-"));
-  const pdfPath = path.join(dir, "cv.pdf");
   try {
-    fs.writeFileSync(pdfPath, file.bytes);
-    // -layout keeps columns and date alignment, which the parser reads.
-    const { stdout } = await run("pdftotext", ["-layout", pdfPath, "-"], {
-      maxBuffer: 8 * 1024 * 1024,
-    });
-    if (!stdout.trim()) {
+    const text = await pdfToText(new Uint8Array(file.bytes));
+    if (!text.trim()) {
       return {
         text: "",
         problem:
-          "No text came out of that PDF. It is probably a scan — an image of a page rather than text. Paste the text below instead.",
+          "No text came out of that PDF. It is probably a scan — an image of a page rather than text — which has no text to read. Paste the text below instead.",
       };
     }
-    return { text: stdout };
-  } catch {
+    return { text };
+  } catch (cause) {
+    // Say what actually failed. Swallowing this turned a bad file into an
+    // unexplained "could not be read", which is not something anyone can act on.
+    const why = cause instanceof Error ? cause.message : String(cause);
     return {
       text: "",
-      problem: "That PDF could not be read. Paste the text below instead.",
+      problem: `That PDF could not be read (${why.slice(0, 200)}). Paste the text below instead.`,
     };
-  } finally {
-    fs.rmSync(dir, { recursive: true, force: true });
   }
 }

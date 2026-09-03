@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useRef, useState, useTransition } from "react";
 import { applyImport, readCv } from "@/lib/actions";
+import type { LibraryWeight } from "@/lib/import/commit";
 import type { AiLevel } from "@/lib/types";
 import type {
   ImportedCv,
@@ -25,9 +26,11 @@ type Draft = ImportedCv;
 export function ImportClient({
   level,
   provider,
+  existing,
 }: {
   level: AiLevel;
   provider: string | null;
+  existing: LibraryWeight;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -37,6 +40,8 @@ export function ImportClient({
   const [problem, setProblem] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
   const [applyProfile, setApplyProfile] = useState(true);
+  const [replace, setReplace] = useState(false);
+  const [confirmReplace, setConfirmReplace] = useState(false);
   const [done, setDone] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -71,7 +76,7 @@ export function ImportClient({
   const commit = () =>
     startTransition(async () => {
       if (!draft) return;
-      const summary = await applyImport(draft, applyProfile);
+      const summary = await applyImport(draft, applyProfile, replace);
       const bits = [
         summary.sections && `${summary.sections} section${summary.sections === 1 ? "" : "s"}`,
         summary.entries && `${summary.entries} record${summary.entries === 1 ? "" : "s"}`,
@@ -81,9 +86,11 @@ export function ImportClient({
       ].filter(Boolean);
       setDone(
         bits.length
-          ? `Added ${bits.join(", ")}${summary.profileUpdated ? ", and filled in blank contact details" : ""}.`
+          ? `${summary.replaced ? "Replaced the library with" : "Added"} ${bits.join(", ")}${summary.profileUpdated ? ", and filled in blank contact details" : ""}.`
           : "Nothing was ticked, so nothing was added.",
       );
+      setReplace(false);
+      setConfirmReplace(false);
       setDraft(null);
       setText("");
       setFileName(null);
@@ -237,9 +244,102 @@ export function ImportClient({
         </section>
       )}
 
+      {existing.sections > 0 && (
+        <section className="card p-5 grid gap-3">
+          <h2 className="eyebrow">Where this goes</h2>
+          <label className="flex gap-3">
+            <input
+              type="radio"
+              name="destination"
+              className="mt-1"
+              checked={!replace}
+              onChange={() => {
+                setReplace(false);
+                setConfirmReplace(false);
+              }}
+            />
+            <span className="grid gap-1">
+              <span className="text-[13.5px] font-medium">Add to what is there</span>
+              <span className="text-[12.5px] muted">
+                New sections are appended. Nothing already in the library
+                changes, and no CV is affected.
+              </span>
+            </span>
+          </label>
+
+          <label className="flex gap-3">
+            <input
+              type="radio"
+              name="destination"
+              className="mt-1"
+              checked={replace}
+              onChange={() => setReplace(true)}
+            />
+            <span className="grid gap-1">
+              <span className="text-[13.5px] font-medium">
+                Replace the library
+              </span>
+              <span className="text-[12.5px] muted">
+                Start again from this CV alone.
+              </span>
+            </span>
+          </label>
+
+          {replace && (
+            <div className="rounded-md border border-[var(--color-line)] p-3 grid gap-2">
+              <p className="text-[12.5px]">
+                This deletes{" "}
+                <span className="font-medium">
+                  {existing.sections} section{existing.sections === 1 ? "" : "s"},{" "}
+                  {existing.entries} record{existing.entries === 1 ? "" : "s"},{" "}
+                  {existing.bullets} bullet{existing.bullets === 1 ? "" : "s"}
+                  {existing.skills ? `, ${existing.skills} skill${existing.skills === 1 ? "" : "s"}` : ""}
+                  {existing.prose ? `, ${existing.prose} paragraph${existing.prose === 1 ? "" : "s"}` : ""}
+                </span>
+                . There is no undo.
+              </p>
+              {existing.cvs > 0 && (
+                <p className="text-[12.5px]">
+                  Your {existing.cvs} CV{existing.cvs === 1 ? "" : "s"} will
+                  survive but lose{" "}
+                  {existing.cvs === 1 ? "its selection" : "their selections"},
+                  because those point at the records being deleted. You would be
+                  picking{" "}
+                  {existing.cvs === 1 ? "it" : "them"} again from the new
+                  library.
+                </p>
+              )}
+              <p className="text-[12.5px] muted">
+                Anything you have already downloaded is safe — a saved version
+                keeps its own copy of what it said.
+              </p>
+              <label className="flex items-center gap-2 text-[12.5px]">
+                <input
+                  type="checkbox"
+                  checked={confirmReplace}
+                  onChange={(event) => setConfirmReplace(event.target.checked)}
+                />
+                I understand this cannot be undone
+              </label>
+            </div>
+          )}
+        </section>
+      )}
+
       <section className="card p-5 flex flex-wrap items-center gap-3">
-        <button type="button" className="btn" disabled={pending} onClick={commit}>
-          {pending ? "Adding…" : "Add to library"}
+        <button
+          type="button"
+          className="btn"
+          disabled={pending || (replace && !confirmReplace)}
+          onClick={commit}
+        >
+          {pending
+            ? replace
+              ? "Replacing…"
+              : "Adding…"
+            : replace
+              ? "Replace the library"
+              : "Add to library"}
         </button>
         <button
           type="button"

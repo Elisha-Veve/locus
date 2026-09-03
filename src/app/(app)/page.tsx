@@ -1,13 +1,11 @@
 import Link from "next/link";
 import { countExports } from "@/lib/exports";
 import { getLibrary, listCvs } from "@/lib/queries";
-import { seedIfEmpty } from "@/lib/seed";
 import { CvListActions, NewCvForm } from "./cv-list-client";
 
 export const dynamic = "force-dynamic";
 
 export default function Home() {
-  seedIfEmpty();
   const cvs = listCvs();
   const library = getLibrary();
 

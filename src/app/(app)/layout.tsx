@@ -19,15 +19,21 @@ import "@fontsource/merriweather/400-italic.css";
 import "@fontsource/merriweather/700.css";
 import { Wordmark } from "@/components/Logo";
 import { ThemeSwitcher } from "@/components/ThemeSwitcher";
-import { DARK_THEMES, DEFAULT_THEME, THEME_STORAGE_KEY } from "@/lib/themes";
+import {
+  DARK_THEMES,
+  DEFAULT_CHOICE,
+  SYSTEM_DARK,
+  SYSTEM_LIGHT,
+  THEME_STORAGE_KEY,
+} from "@/lib/themes";
 
 /**
  * Runs before first paint so the saved theme is on <html> by the time anything
  * renders — otherwise every load flashes the default light palette first.
  */
 const THEME_INIT = `(function(){try{
-var c=localStorage.getItem(${JSON.stringify(THEME_STORAGE_KEY)})||${JSON.stringify(DEFAULT_THEME)};
-var t=c==="system"?(matchMedia("(prefers-color-scheme: dark)").matches?"dark":${JSON.stringify(DEFAULT_THEME)}):c;
+var c=localStorage.getItem(${JSON.stringify(THEME_STORAGE_KEY)})||${JSON.stringify(DEFAULT_CHOICE)};
+var t=c==="system"?(matchMedia("(prefers-color-scheme: dark)").matches?${JSON.stringify(SYSTEM_DARK)}:${JSON.stringify(SYSTEM_LIGHT)}):c;
 var d=document.documentElement;
 d.dataset.theme=t;
 d.style.colorScheme=${JSON.stringify([...DARK_THEMES])}.indexOf(t)>-1?"dark":"light";

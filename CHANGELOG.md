@@ -35,6 +35,36 @@ same schema.
   dates, wrong-typed collections and oversized fields, with no key or network
   needed. CI runs it.
 
+- **The default theme follows the OS.** It used to default to Light, so anyone
+  working in dark got a bright page until they went and changed it. `System`
+  was already offered; it is now what you start on.
+
+- **A new library offers a choice instead of filling itself in.** Locus used to
+  seed a fictional CV on first load, so an empty database quietly became
+  somebody else's invented career and the first job was deleting it. An empty
+  library now offers to read a CV you already have, or to take the sample
+  deliberately, or to be left alone while you add sections by hand. The demo
+  database still seeds itself — sample data is the whole point of it.
+
+- **An import can replace the library rather than add to it.** Appending stays
+  the default. Replacing states exactly what it will delete, with counts, and
+  is refused until confirmed. It also says the part that is easy to miss: CVs
+  survive but lose their selections, because those point at the records being
+  deleted. Anything already downloaded is untouched, since a saved version
+  keeps its own copy of what it said.
+
+- **PDFs are read without installing anything.** Choosing a PDF used to need
+  `pdftotext` from poppler — a system dependency, so for most people the option
+  was there and quietly did not work. A bundled reader replaces it; `npm
+  install` is the whole setup, and there is now one code path rather than two,
+  so a parse that goes wrong goes wrong the same way for everyone.
+
+  Plain text extraction throws away vertical space, and vertical space is what
+  the parser reads — records are separated by blank lines. So the reader works
+  from positioned text and rebuilds the layout: lines grouped by baseline, a
+  blank line wherever the gap is markedly bigger than usual, and wide
+  horizontal gaps kept as spaces so `Employer    Role` still splits.
+
 - **Anthropic, OpenAI and Groq** as providers, chosen in Settings. Groq's free
   tier is the easiest place to start —
   [docs/providers.md](docs/providers.md) covers getting a key for each, and

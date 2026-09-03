@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev -p 3210",
-    "dev:demo": "LOCUS_DB=data/demo.db next dev -p 3211",
+    "dev:demo": "LOCUS_DB=data/demo.db LOCUS_SEED=1 next dev -p 3211",
     "screenshots": "node scripts/screenshots.mjs",
     "check:migrations": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-migrations.mts",
     "check:import": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-import.mts",
@@ -24,7 +24,8 @@
     "next": "15.5.2",
     "puppeteer": "^24.15.0",
     "react": "19.1.0",
-    "react-dom": "19.1.0"
+    "react-dom": "19.1.0",
+    "unpdf": "^1.8.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.12",

@@ -3,7 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 import {
   DARK_THEMES,
-  DEFAULT_THEME,
+  DEFAULT_CHOICE,
+  SYSTEM_DARK,
+  SYSTEM_LIGHT,
   THEMES,
   THEME_STORAGE_KEY,
 } from "@/lib/themes";
@@ -12,8 +14,8 @@ type Choice = "system" | string;
 
 function systemTheme(): string {
   return window.matchMedia("(prefers-color-scheme: dark)").matches
-    ? "dark"
-    : DEFAULT_THEME;
+    ? SYSTEM_DARK
+    : SYSTEM_LIGHT;
 }
 
 function applyTheme(choice: Choice) {
@@ -25,16 +27,16 @@ function applyTheme(choice: Choice) {
 }
 
 export function ThemeSwitcher() {
-  const [choice, setChoice] = useState<Choice>(DEFAULT_THEME);
+  const [choice, setChoice] = useState<Choice>(DEFAULT_CHOICE);
   const [open, setOpen] = useState(false);
   const box = useRef<HTMLDivElement>(null);
 
   // The pre-paint script already applied the theme; adopt whatever it chose.
   useEffect(() => {
     try {
-      setChoice(localStorage.getItem(THEME_STORAGE_KEY) ?? DEFAULT_THEME);
+      setChoice(localStorage.getItem(THEME_STORAGE_KEY) ?? DEFAULT_CHOICE);
     } catch {
-      setChoice(DEFAULT_THEME);
+      setChoice(DEFAULT_CHOICE);
     }
   }, []);
 

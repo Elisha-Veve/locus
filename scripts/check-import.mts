@@ -14,6 +14,7 @@
  *   npm run check:import
  */
 import { parseCv } from "../src/lib/import/parse.ts";
+import { pdfToText } from "../src/lib/import/pdfText.ts";
 import { coerceSection, extractJson } from "../src/lib/import/coerce.ts";
 
 let pass = 0;
@@ -105,6 +106,87 @@ check("nothing left unplaced", cv.leftovers.length === 0, JSON.stringify(cv.left
 
 check("empty input does not throw", parseCv("").sections.length === 0);
 check("noise does not throw", parseCv("!!!\n\n???").sections.length >= 0);
+
+
+/* ---------------------------------------------------------------- */
+/* Reading a PDF                                                     */
+/* ---------------------------------------------------------------- */
+
+/**
+ * A one-page PDF built here rather than committed, so the check stays
+ * hermetic and the fixture cannot drift from what it claims to contain. The y
+ * positions matter: tight within a record, wide between them, which is what
+ * the reader turns back into blank lines.
+ */
+function tinyPdf(): Uint8Array {
+  const rows: Array<[number, number, string]> = [
+    [760, 14, "Ada Okonkwo"],
+    [742, 10, "ada.okonkwo@example.com  |  +44 7700 900123"],
+    [728, 10, "London, UK"],
+    [690, 12, "EXPERIENCE"],
+    [668, 10, "Northwind Financial | Staff Engineer | London"],
+    [654, 10, "Feb 2023 - Present"],
+    [640, 10, "- Led the settlement ledger migration"],
+    [588, 10, "Brightwell Payments | Senior Backend Engineer | Remote"],
+    [574, 10, "June 2019 - January 2023"],
+    [560, 10, "- Designed an idempotency layer"],
+    [522, 12, "SKILLS"],
+    [500, 10, "Languages: Go, TypeScript, SQL"],
+  ];
+  const content = Buffer.from(
+    rows.map(([y, size, text]) => `BT /F1 ${size} Tf 60 ${y} Td (${text}) Tj ET`).join("\n"),
+  );
+  const objects = [
+    Buffer.from("<< /Type /Catalog /Pages 2 0 R >>"),
+    Buffer.from("<< /Type /Pages /Kids [3 0 R] /Count 1 >>"),
+    Buffer.from(
+      "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>",
+    ),
+    Buffer.concat([
+      Buffer.from(`<< /Length ${content.length} >>\nstream\n`),
+      content,
+      Buffer.from("\nendstream"),
+    ]),
+    Buffer.from("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>"),
+  ];
+
+  let out = Buffer.from("%PDF-1.4\n");
+  const offsets: number[] = [];
+  objects.forEach((body, i) => {
+    offsets.push(out.length);
+    out = Buffer.concat([out, Buffer.from(`${i + 1} 0 obj\n`), body, Buffer.from("\nendobj\n")]);
+  });
+  const xref = out.length;
+  let table = `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
+  for (const offset of offsets) table += `${String(offset).padStart(10, "0")} 00000 n \n`;
+  out = Buffer.concat([
+    out,
+    Buffer.from(table),
+    Buffer.from(`trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`),
+  ]);
+  return new Uint8Array(out);
+}
+
+console.log("\nReading a PDF — bundled, no system dependency\n");
+
+const pdfText = await pdfToText(tinyPdf());
+
+// The reader must put vertical space back as blank lines. Without them the
+// parser runs every record together, which is the bug it was built to avoid.
+check("blank line recovered between records", /\n\s*\n/.test(pdfText), JSON.stringify(pdfText.slice(0, 90)));
+
+const fromPdf = parseCv(pdfText);
+const pdfExperience = fromPdf.sections.find((s) => s.title === "EXPERIENCE");
+check("contact details survive the PDF", fromPdf.profile.full_name === "Ada Okonkwo");
+check("both records stay separate", pdfExperience?.entries.length === 2, String(pdfExperience?.entries.length));
+check(
+  "each keeps its own dates",
+  pdfExperience?.entries[0].start_date === "2023-02" && pdfExperience?.entries[1].start_date === "2019-06",
+  JSON.stringify(pdfExperience?.entries.map((e) => e.start_date)),
+);
+check("columns split into org and role", pdfExperience?.entries[0].role === "Staff Engineer", JSON.stringify(pdfExperience?.entries[0].role));
+check("skills still group", fromPdf.sections.find((s) => s.title === "SKILLS")?.groups[0].label === "Languages");
+check("a PDF with no text is not a crash", (await pdfToText(tinyPdf())).length > 0);
 
 /* ---------------------------------------------------------------- */
 /* The coercion barrier                                              */

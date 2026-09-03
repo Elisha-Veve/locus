@@ -8,6 +8,7 @@ import { extractText } from "./import/extract";
 import { parseCv } from "./import/parse";
 import { refineCv } from "./import/refine";
 import type { ImportedCv } from "./import/types";
+import { libraryIsEmpty, seedIfEmpty } from "./seed";
 import { db, nextOrder } from "./db";
 import { listExports, removeExport } from "./exports";
 import { touchCv } from "./queries";
@@ -224,9 +225,28 @@ export async function readCv(input: {
   return { cv, note };
 }
 
+/**
+ * Fill an empty library with the sample, when someone asks for it.
+ *
+ * Refuses if anything is already there — this is a first-run convenience, not
+ * a way to mix invented records into real ones.
+ */
+export async function useSampleLibrary() {
+  if (!libraryIsEmpty()) {
+    throw new Error("The library already has records in it.");
+  }
+  seedIfEmpty();
+  revalidatePath("/library");
+  revalidatePath("/", "layout");
+}
+
 /** Write a reviewed import into the library. Only what is still ticked. */
-export async function applyImport(cv: ImportedCv, applyProfile: boolean) {
-  const summary = commitImport(cv, { applyProfile });
+export async function applyImport(
+  cv: ImportedCv,
+  applyProfile: boolean,
+  replace = false,
+) {
+  const summary = commitImport(cv, { applyProfile, replace });
   revalidatePath("/library");
   revalidatePath("/", "layout");
   return summary;
