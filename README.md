@@ -223,7 +223,16 @@ See [CHANGELOG.md](CHANGELOG.md). Every version gets an entry.
 
 ## Not done yet
 
-Desktop only — there is no mobile layout. Deleting a library record removes it
-from past CVs too (the `archived` columns exist but nothing sets them). An
-archived version can be viewed and re-downloaded but not restored back onto the
-CV as a selection.
+Tracked in [issues](https://github.com/Elisha-Veve/locus/issues). The ones that
+matter most:
+
+| | |
+| --- | --- |
+| [#1](https://github.com/Elisha-Veve/locus/issues/1) | Data lives in one gitignored SQLite file with no export. Lose it and everything goes. |
+| [#2](https://github.com/Elisha-Veve/locus/issues/2) | Deleting a library record silently changes CVs that already used it. |
+| [#3](https://github.com/Elisha-Veve/locus/issues/3) | Desktop only — no mobile layout yet. |
+| [#4](https://github.com/Elisha-Veve/locus/issues/4) | Nothing runs on push; the checks exist but are manual. |
+| [#5](https://github.com/Elisha-Veve/locus/issues/5) | An archived version can be viewed and re-downloaded, but not restored onto a CV. |
+
+[#10](https://github.com/Elisha-Veve/locus/issues/10) is a small, self-contained
+place to start if you want to change something.
